@@ -4,12 +4,25 @@
   <title>Steven Oxley</title>
   <link href="http://www.stevenoxley.com/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2011-09-30T09:07:05-05:00</updated>
+  <updated>2011-09-30T17:42:56-05:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name>Steven Oxley</name>
     
   </author>
 
+  
+  <entry>
+    <title>First!</title>
+    <link href="http://www.stevenoxley.com/blog/2011/09/30/first/"/>
+    <updated>2011-09-30T09:17:00-05:00</updated>
+    <id>http://www.stevenoxley.com/blog/2011/09/30/first</id>
+    <content type="html">&lt;p&gt;First post!  Aww yeeeeah, I win.  Seriously, though, these are the beginnings of a new blog which I have formed using the &lt;a href=&quot;http://octopress.org/&quot;&gt;Octopress&lt;/a&gt; platform (some of you may have already figured that out from the theme).  You can see the source of any changes I&amp;#8217;ve made (mostly just creating my own posts/pages) here: &lt;a href=&quot;https://github.com/xonev/StevenOxley.com&quot;&gt;https://github.com/xonev/StevenOxley.com&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you would just like to learn more about me, you can go to &lt;a href=&quot;http://www.stevenoxley.com/about/&quot;&gt;the About page&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;I still haven&amp;#8217;t figured out exactly what I&amp;#8217;m going to be making this blog about.  Undoubtedly, the majority of the posts will be technical in nature, but I may also throw in the random &amp;#8220;just-for-fun&amp;#8221; post now and then.  Hopefully we&amp;#8217;ll all be enriched by whatever it turns into.&lt;/p&gt;
+</content>
+  </entry>
   
 </feed>

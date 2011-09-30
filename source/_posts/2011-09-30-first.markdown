@@ -1,0 +1,13 @@
+---
+layout: post
+title: "First!"
+date: 2011-09-30 09:17
+comments: true
+categories: [blogging]
+---
+
+First post!  Aww yeeeeah, I win.  Seriously, though, these are the beginnings of a new blog which I have formed using the [Octopress](http://octopress.org/) platform (some of you may have already figured that out from the theme).  You can see the source of any changes I've made (mostly just creating my own posts/pages) here: [https://github.com/xonev/StevenOxley.com](https://github.com/xonev/StevenOxley.com).
+
+If you would just like to learn more about me, you can go to [the About page](/about/).
+
+I still haven't figured out exactly what I'm going to be making this blog about.  Undoubtedly, the majority of the posts will be technical in nature, but I may also throw in the random "just-for-fun" post now and then.  Hopefully we'll all be enriched by whatever it turns into.
