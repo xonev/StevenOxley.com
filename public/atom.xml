@@ -4,13 +4,31 @@
   <title>Steven Oxley</title>
   <link href="http://www.stevenoxley.com/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2011-11-02T01:27:47-05:00</updated>
+  <updated>2011-11-02T01:55:38-05:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name>Steven Oxley</name>
     
   </author>
 
+  
+  <entry>
+    <title>Why No Touchie: Upgrading to Ubuntu 11.10</title>
+    <link href="http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10/"/>
+    <updated>2011-11-02T01:33:00-05:00</updated>
+    <id>http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10</id>
+    <content type="html">&lt;p&gt;I upgraded to Ubuntu 11.10 this evening and the first thing I noticed was that my touchpad no longer worked&amp;#8230; Of course, I immediately suspected that &amp;#8220;touchpad-indicator&amp;#8221;, the application I installed to disable my touchpad when I have a normal mouse plugged in, was to blame.  However, I decided to do some searching around first and found a couple of forum posts about similar problems.  After reading about their woes, I decided to just try removing touchpad-indicator (&lt;code&gt;sudo apt-get remove touchpad-indicator&lt;/code&gt;).  After running that command line and restarting, everything worked fine.  I don&amp;#8217;t know what changed in the upgrade.  Perhaps it would work again after reinstalling, but I&amp;#8217;ll probably wait until having the touchpad enabled annoys me again before trying.&lt;/p&gt;
+
+&lt;p&gt;I also ran into a problem with the &amp;#8220;ffi&amp;#8221; Ruby gem.  As I mentioned in &lt;a href=&quot;http://www.stevenoxley.com/blog/2011/09/30/first/&quot;&gt;the previous post&lt;/a&gt;, I am running this blog on Octopress, which is built on Ruby.  When I would try to run &lt;code&gt;rake generate&lt;/code&gt; (&amp;#8220;generate&amp;#8221; is the Octopress Rakefile target that builds all of the HTML from the markdown that I write these posts in), I would get something like the following error:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;in `require&#8217;: libffi.so.5: cannot open shared object file: No such file or directory&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;p&gt;After some investigation, I found that this was easily fixed by running &lt;code&gt;sudo gem pristine ffi&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Other than these two little issues, Ubuntu 11.10 has been pretty good to me so far.  Of course, I&amp;#8217;ve only used it for an hour or so, but it appears that it hasn&amp;#8217;t totally hosed my system, so that&amp;#8217;s a start.  I have noticed that the &lt;code&gt;alt-tab&lt;/code&gt; behavior between workspaces is now different.  It will now switch to the next most recently used application no matter what workspace that application is in whereas before it would restrict &lt;code&gt;alt-tab&lt;/code&gt; switching to the current workspace.  I&amp;#8217;ll have to see if I get used to that.  If I don&amp;#8217;t, I may end up looking around for a setting to change it (I would imagine it would be configurable).  I guess we&amp;#8217;ll see what other issues I run up against in the following weeks.&lt;/p&gt;
+</content>
+  </entry>
   
   <entry>
     <title>First!</title>
