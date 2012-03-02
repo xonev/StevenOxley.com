@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title>Steven Oxley</title>
+  <title>Bytes and Bikes</title>
   <link href="http://www.stevenoxley.com/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2011-11-02T01:55:38-05:00</updated>
+  <updated>2012-03-02T09:03:30-06:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name>Steven Oxley</name>
