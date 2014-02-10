@@ -2,28 +2,32 @@
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
         <loc>http://www.stevenoxley.com/blog/2011/09/30/first/</loc>
-        <lastmod>2012-03-01T21:50:15-06:00</lastmod>
+        <lastmod>2014-02-10T09:58:43-06:00</lastmod>
     </url>
     <url>
         <loc>
             http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10/
         </loc>
-        <lastmod>2012-03-01T21:50:15-06:00</lastmod>
+        <lastmod>2014-02-10T09:58:43-06:00</lastmod>
     </url>
     <url>
         <loc>http://www.stevenoxley.com/blog/2012/03/13/on-the-uncertainty-of-everything/</loc>
-        <lastmod>2012-03-14T01:05:02-05:00</lastmod>
+        <lastmod>2014-02-10T09:58:43-06:00</lastmod>
     </url>
     <url>
         <loc>http://www.stevenoxley.com/about/</loc>
-        <lastmod>2012-03-01T21:50:15-06:00</lastmod>
+        <lastmod>2014-02-10T09:58:43-06:00</lastmod>
     </url>
     <url>
         <loc>http://www.stevenoxley.com/blog/archives/</loc>
-        <lastmod>2012-03-14T01:05:02-05:00</lastmod>
+        <lastmod>2014-02-10T09:58:43-06:00</lastmod>
     </url>
     <url>
         <loc>http://www.stevenoxley.com/</loc>
-        <lastmod>2012-03-14T01:05:02-05:00</lastmod>
+        <lastmod>2014-02-10T09:58:43-06:00</lastmod>
+    </url>
+    <url>
+        <loc>http://www.stevenoxley.com/robots.txt</loc>
+        <lastmod>2014-02-10T09:58:43-06:00</lastmod>
     </url>
 </urlset>

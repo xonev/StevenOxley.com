@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Bytes and Bikes]]></title>
-  <link href="http://www.stevenoxley.com/atom.xml" rel="self"/>
+  <title><![CDATA[Category: Philosophy | Bytes and Bikes]]></title>
+  <link href="http://www.stevenoxley.com/blog/categories/philosophy/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
   <updated>2014-02-10T09:59:55-06:00</updated>
   <id>http://www.stevenoxley.com/</id>
@@ -31,37 +31,6 @@
 <hr />
 
 <p>I find it useful to break things down until they are as clear as I can make them in my mind.  I hope that may be the case for some of you and that this post will encourage you to do the same.  I would be very interested to hear your thoughts on the matter.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Why No Touchie: Upgrading to Ubuntu 11.10]]></title>
-    <link href="http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10/"/>
-    <updated>2011-11-02T01:33:00-05:00</updated>
-    <id>http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10</id>
-    <content type="html"><![CDATA[<p>I upgraded to Ubuntu 11.10 this evening and the first thing I noticed was that my touchpad no longer worked&hellip; Of course, I immediately suspected that &ldquo;touchpad-indicator&rdquo;, the application I installed to disable my touchpad when I have a normal mouse plugged in, was to blame.  However, I decided to do some searching around first and found a couple of forum posts about similar problems.  After reading about their woes, I decided to just try removing touchpad-indicator (<code>sudo apt-get remove touchpad-indicator</code>).  After running that command line and restarting, everything worked fine.  I don&rsquo;t know what changed in the upgrade.  Perhaps it would work again after reinstalling, but I&rsquo;ll probably wait until having the touchpad enabled annoys me again before trying.</p>
-
-<p>I also ran into a problem with the &ldquo;ffi&rdquo; Ruby gem.  As I mentioned in <a href="http://www.stevenoxley.com/blog/2011/09/30/first/">the previous post</a>, I am running this blog on Octopress, which is built on Ruby.  When I would try to run <code>rake generate</code> (&ldquo;generate&rdquo; is the Octopress Rakefile target that builds all of the HTML from the markdown that I write these posts in), I would get something like the following error:</p>
-
-<pre><code>in `require': libffi.so.5: cannot open shared object file: No such file or directory</code></pre>
-
-
-<p>After some investigation, I found that this was easily fixed by running <code>sudo gem pristine ffi</code>.</p>
-
-<p>Other than these two little issues, Ubuntu 11.10 has been pretty good to me so far.  Of course, I&rsquo;ve only used it for an hour or so, but it appears that it hasn&rsquo;t totally hosed my system, so that&rsquo;s a start.  I have noticed that the <code>alt-tab</code> behavior between workspaces is now different.  It will now switch to the next most recently used application no matter what workspace that application is in whereas before it would restrict <code>alt-tab</code> switching to the current workspace.  I&rsquo;ll have to see if I get used to that.  If I don&rsquo;t, I may end up looking around for a setting to change it (I would imagine it would be configurable).  I guess we&rsquo;ll see what other issues I run up against in the following weeks.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[First!]]></title>
-    <link href="http://www.stevenoxley.com/blog/2011/09/30/first/"/>
-    <updated>2011-09-30T09:17:00-05:00</updated>
-    <id>http://www.stevenoxley.com/blog/2011/09/30/first</id>
-    <content type="html"><![CDATA[<p>First post!  Aww yeeeeah, I win.  Seriously, though, these are the beginnings of a new blog which I have formed using the <a href="http://octopress.org/">Octopress</a> platform (some of you may have already figured that out from the theme).  You can see the source of any changes I&rsquo;ve made (mostly just creating my own posts/pages) here: <a href="https://github.com/xonev/StevenOxley.com">https://github.com/xonev/StevenOxley.com</a>.</p>
-
-<p>If you would just like to learn more about me, you can go to <a href="http://www.stevenoxley.com/about/">the About page</a>.</p>
-
-<p>I still haven&rsquo;t figured out exactly what I&rsquo;m going to be making this blog about.  Undoubtedly, the majority of the posts will be technical in nature, but I may also throw in the random &ldquo;just-for-fun&rdquo; post now and then.  Hopefully we&rsquo;ll all be enriched by whatever it turns into.</p>
 ]]></content>
   </entry>
   
