@@ -4,7 +4,7 @@
   <title><![CDATA[Bytes and Bikes]]></title>
   <link href="http://www.stevenoxley.com/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2014-03-25T08:46:30-05:00</updated>
+  <updated>2015-01-28T07:11:42-08:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name><![CDATA[Steven Oxley]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[The Great Dvorak Distraction]]></title>
     <link href="http://www.stevenoxley.com/blog/2014/03/24/the-great-dvorak-distraction/"/>
-    <updated>2014-03-24T18:54:53-05:00</updated>
+    <updated>2014-03-24T16:54:53-07:00</updated>
     <id>http://www.stevenoxley.com/blog/2014/03/24/the-great-dvorak-distraction</id>
     <content type="html"><![CDATA[<p>I am pretty fast at typing.
 I am by no means the fastest ever, but I can hold my own.
@@ -123,7 +123,7 @@ Because I really do believe in it.</p>
   <entry>
     <title type="html"><![CDATA[One Week of Reading]]></title>
     <link href="http://www.stevenoxley.com/blog/2014/02/19/one-week-of-reading/"/>
-    <updated>2014-02-19T17:37:44-06:00</updated>
+    <updated>2014-02-19T15:37:44-08:00</updated>
     <id>http://www.stevenoxley.com/blog/2014/02/19/one-week-of-reading</id>
     <content type="html"><![CDATA[<p>Well, I have been trying to read faster for about a week. My progress has been &hellip; disappointing. Granted, I have not actually &ldquo;practiced&rdquo; that much, but I have done a fair bit of regular reading, and most of the time I am conscious of trying to read faster. However, according to <a href="http://www.youtube.com/playlist?list=PL61FFA3231514D518">the first resource I consumed</a> since embarking on this speed-reading adventure, I should spend time practicing if I really want to get fast.</p>
 
@@ -138,7 +138,7 @@ Because I really do believe in it.</p>
   <entry>
     <title type="html"><![CDATA[On Learning to Read . . . Faster]]></title>
     <link href="http://www.stevenoxley.com/blog/2014/02/10/on-learning-to-read-faster/"/>
-    <updated>2014-02-10T10:12:52-06:00</updated>
+    <updated>2014-02-10T08:12:52-08:00</updated>
     <id>http://www.stevenoxley.com/blog/2014/02/10/on-learning-to-read-faster</id>
     <content type="html"><![CDATA[<p>I am a slow reader. I have known this for a while now. I have even tried to do something about it at one point, but a recent post by my cousin made me realize just how much potential reading speed I&rsquo;m missing out on. She took the <a href="http://www.staples.com/sbd/cre/marketing/technology-research-centers/ereaders/speed-reader/">staples reading test</a> that has been going around recently and found that she reads at 748 words per minute.</p>
 
@@ -161,7 +161,7 @@ Because I really do believe in it.</p>
   <entry>
     <title type="html"><![CDATA[On the Uncertainty of Everything]]></title>
     <link href="http://www.stevenoxley.com/blog/2012/03/13/on-the-uncertainty-of-everything/"/>
-    <updated>2012-03-13T23:32:00-05:00</updated>
+    <updated>2012-03-13T23:32:00-07:00</updated>
     <id>http://www.stevenoxley.com/blog/2012/03/13/on-the-uncertainty-of-everything</id>
     <content type="html"><![CDATA[<p>I watched a series of videos of an interview with Richard Feynman today.  I highly recommend that you make the time to <a href="http://www.dailymotion.com/video/xey45m_the-pleasure-of-finding-things-out_tech">check them out</a>.  (If you don&rsquo;t know who Richard Feynman is, you should <a href="http://en.wikipedia.org/wiki/Richard_Feynman">look him up</a>.)  While watching the interview, I gained insight into a number of ideas.</p>
 
@@ -182,7 +182,7 @@ Because I really do believe in it.</p>
   <entry>
     <title type="html"><![CDATA[Why No Touchie: Upgrading to Ubuntu 11.10]]></title>
     <link href="http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10/"/>
-    <updated>2011-11-02T01:33:00-05:00</updated>
+    <updated>2011-11-02T01:33:00-07:00</updated>
     <id>http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10</id>
     <content type="html"><![CDATA[<p>I upgraded to Ubuntu 11.10 this evening and the first thing I noticed was that my touchpad no longer worked&hellip; Of course, I immediately suspected that &ldquo;touchpad-indicator&rdquo;, the application I installed to disable my touchpad when I have a normal mouse plugged in, was to blame.  However, I decided to do some searching around first and found a couple of forum posts about similar problems.  After reading about their woes, I decided to just try removing touchpad-indicator (<code>sudo apt-get remove touchpad-indicator</code>).  After running that command line and restarting, everything worked fine.  I don&rsquo;t know what changed in the upgrade.  Perhaps it would work again after reinstalling, but I&rsquo;ll probably wait until having the touchpad enabled annoys me again before trying.</p>
 
@@ -200,7 +200,7 @@ Because I really do believe in it.</p>
   <entry>
     <title type="html"><![CDATA[First!]]></title>
     <link href="http://www.stevenoxley.com/blog/2011/09/30/first/"/>
-    <updated>2011-09-30T09:17:00-05:00</updated>
+    <updated>2011-09-30T09:17:00-07:00</updated>
     <id>http://www.stevenoxley.com/blog/2011/09/30/first</id>
     <content type="html"><![CDATA[<p>First post!  Aww yeeeeah, I win.  Seriously, though, these are the beginnings of a new blog which I have formed using the <a href="http://octopress.org/">Octopress</a> platform (some of you may have already figured that out from the theme).  You can see the source of any changes I&rsquo;ve made (mostly just creating my own posts/pages) here: <a href="https://github.com/xonev/StevenOxley.com">https://github.com/xonev/StevenOxley.com</a>.</p>
 

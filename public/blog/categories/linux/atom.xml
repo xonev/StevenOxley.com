@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux | Bytes and Bikes]]></title>
   <link href="http://www.stevenoxley.com/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2014-03-25T08:46:30-05:00</updated>
+  <updated>2015-01-28T07:11:42-08:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name><![CDATA[Steven Oxley]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Why No Touchie: Upgrading to Ubuntu 11.10]]></title>
     <link href="http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10/"/>
-    <updated>2011-11-02T01:33:00-05:00</updated>
+    <updated>2011-11-02T01:33:00-07:00</updated>
     <id>http://www.stevenoxley.com/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10</id>
     <content type="html"><![CDATA[<p>I upgraded to Ubuntu 11.10 this evening and the first thing I noticed was that my touchpad no longer worked&hellip; Of course, I immediately suspected that &ldquo;touchpad-indicator&rdquo;, the application I installed to disable my touchpad when I have a normal mouse plugged in, was to blame.  However, I decided to do some searching around first and found a couple of forum posts about similar problems.  After reading about their woes, I decided to just try removing touchpad-indicator (<code>sudo apt-get remove touchpad-indicator</code>).  After running that command line and restarting, everything worked fine.  I don&rsquo;t know what changed in the upgrade.  Perhaps it would work again after reinstalling, but I&rsquo;ll probably wait until having the touchpad enabled annoys me again before trying.</p>
 

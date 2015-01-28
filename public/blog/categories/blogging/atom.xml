@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Blogging | Bytes and Bikes]]></title>
   <link href="http://www.stevenoxley.com/blog/categories/blogging/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2014-03-25T08:46:30-05:00</updated>
+  <updated>2015-01-28T07:11:42-08:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name><![CDATA[Steven Oxley]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[First!]]></title>
     <link href="http://www.stevenoxley.com/blog/2011/09/30/first/"/>
-    <updated>2011-09-30T09:17:00-05:00</updated>
+    <updated>2011-09-30T09:17:00-07:00</updated>
     <id>http://www.stevenoxley.com/blog/2011/09/30/first</id>
     <content type="html"><![CDATA[<p>First post!  Aww yeeeeah, I win.  Seriously, though, these are the beginnings of a new blog which I have formed using the <a href="http://octopress.org/">Octopress</a> platform (some of you may have already figured that out from the theme).  You can see the source of any changes I&rsquo;ve made (mostly just creating my own posts/pages) here: <a href="https://github.com/xonev/StevenOxley.com">https://github.com/xonev/StevenOxley.com</a>.</p>
 
