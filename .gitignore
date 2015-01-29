@@ -1,4 +1,5 @@
 .bundle
+.env
 .DS_Store
 .sass-cache
 .gist-cache
@@ -9,4 +10,3 @@ source.old
 source/_stash
 vendor
 node_modules
-*~
