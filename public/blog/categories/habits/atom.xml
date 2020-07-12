@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Habits | Bytes and Bikes]]></title>
+  <link href="http://www.stevenoxley.com/blog/categories/habits/atom.xml" rel="self"/>
+  <link href="http://www.stevenoxley.com/"/>
+  <updated>2020-07-12T14:30:57-07:00</updated>
+  <id>http://www.stevenoxley.com/</id>
+  <author>
+    <name><![CDATA[Steven Oxley]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[New Habits]]></title>
+    <link href="http://www.stevenoxley.com/blog/2020/07/12/new-habits/"/>
+    <updated>2020-07-12T14:20:09-07:00</updated>
+    <id>http://www.stevenoxley.com/blog/2020/07/12/new-habits</id>
+    <content type="html"><![CDATA[<p>This blog is ancient, but let&rsquo;s start a new habit with it. Let&rsquo;s publish something. Every day. It doesn&rsquo;t have to be on the blog, but writing is one of the easier things I can do. I also have a bunch of videos on my harddrive that I could edit and upload to YouTube. I just want to be creating something that I can point to every day.</p>
+
+<p>I am actually a bit surprised that I was able to get the tooling for this blog back up and running after all these years. All it took was installing <code>rbenv</code>, an old version of Ruby &ndash; 1.9.3 &ndash; and an old version of <code>bundler</code> &ndash; 1.0.14 &ndash; and then everything worked. I hope to get a new site up before too long. I&rsquo;ve started working on it <a href="https://github.com/xonev/the-archive/tree/master/websites">here</a>, but as you can see it has stalled. It&rsquo;s hard to find time for things like that with a baby!</p>
+]]></content>
+  </entry>
+  
+</feed>
