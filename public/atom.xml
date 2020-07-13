@@ -4,7 +4,7 @@
   <title><![CDATA[Bytes and Bikes]]></title>
   <link href="http://www.stevenoxley.com/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2020-07-12T14:30:57-07:00</updated>
+  <updated>2020-07-13T11:15:49-07:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name><![CDATA[Steven Oxley]]></name>
@@ -12,6 +12,89 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Clojure Markdown Parsing Benchmarks]]></title>
+    <link href="http://www.stevenoxley.com/blog/2020/07/13/clojure-markdown-parsing-benchmarks/"/>
+    <updated>2020-07-13T10:45:32-07:00</updated>
+    <id>http://www.stevenoxley.com/blog/2020/07/13/clojure-markdown-parsing-benchmarks</id>
+    <content type="html"><![CDATA[<p>I am working on setting up a new system for publishing content. I have a few different categories of content that I&rsquo;m interested in creating. I&rsquo;ll have to determine exactly what the taxonomy will be, but the broad categories will probably be computers, mountain biking, and more personal stuff including relationships and religion. The first step towards this new system is just to replace the technology behind this website.</p>
+
+<p>This website is currently generated statically using a very old version of <a href="https://jekyllrb.com/">jekyll</a>/<a href="http://octopress.org/">octopress</a>. Static site generation is really nice, but I think I&rsquo;m going to want to add some more interactive features like small applications. Therefore, I decided to replace this static site generation approach with a Clojure application.</p>
+
+<p>Since these posts currently are all written in markdown and then parsed and rendered into HTML before being served statically via nginx, I wanted to check to see how expensive it would be to parse and render the markdown into HTML on every page load. To evaluate, I used a couple of handy Clojure libraries &ndash; <a href="https://github.com/yogthos/markdown-clj">markdown-clj</a> and <a href="https://github.com/hugoduncan/criterium/">criterium</a>. Using <code>markdown-clj</code> it was fairly trivial to replicate the functionality of the markdown processing of octopress. It is even has the ablility to parse the metadata at the top of the markdown files. For example, this is the metadata that I have at the top of this post:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>---
+</span><span class='line'>layout: post
+</span><span class='line'>title: "Clojure Markdown Parsing Benchmarks"
+</span><span class='line'>date: 2020-07-13 10:45:32 -0700
+</span><span class='line'>comments: true
+</span><span class='line'>categories: clojure programming
+</span><span class='line'>---</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To parse that metadata, I simply had to pass in the <code>:parse-meta? true</code> option when parsing, like this:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>(md/md-to-html file-name writer :parse-meta? true :reference-links? true)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then the metadata is parsed nicely into a map for me:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>:metadata #ordered/map ([:layout "post"] [:title "Clojure Markdown Parsing Benchmarks"] [:date "2020-07-13 10:45:32 -0700"] [:comments true] [:categories "clojure programming"])</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can see more detail in the source code <a href="https://github.com/xonev/the-archive/blob/4fbdbcc8f08386a9ef893a21d69c2b74385c5ecf/websites/src/websites/markdown.clj">on github</a>.</p>
+
+<p>Finally, I created an uberjar using <code>lein uberjar</code>, uploaded it to the DigitalOcean machine I intend to use, and ran the benchmark using criterium:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>(crit/with-progress-reporting (crit/bench (md/parse-post "posts/2012-03-13-on-the-uncertainty-of-everything.md") :verbose))</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Because of <a href="https://github.com/hugoduncan/criterium/issues/41">this issue</a>, I also had to call <code>flush</code> afterwards to get the output to display correctly. Again, you can see more detail <a href="https://github.com/xonev/the-archive/blob/4fbdbcc8f08386a9ef893a21d69c2b74385c5ecf/websites/src/websites/core.clj">on github</a>.</p>
+
+<p>Once I ran the benchmark, criterium gave me some useful results:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Evaluation count : 3240 in 60 samples of 54 calls.
+</span><span class='line'>      Execution time sample mean : 19.447409 ms
+</span><span class='line'>             Execution time mean : 19.449686 ms
+</span><span class='line'>Execution time sample std-deviation : 909.567764 µs
+</span><span class='line'>    Execution time std-deviation : 928.443124 µs
+</span><span class='line'>   Execution time lower quantile : 18.431349 ms ( 2.5%)
+</span><span class='line'>   Execution time upper quantile : 21.718663 ms (97.5%)
+</span><span class='line'>                   Overhead used : 2.936410 ns
+</span><span class='line'>
+</span><span class='line'>Found 5 outliers in 60 samples (8.3333 %)
+</span><span class='line'>        low-severe       4 (6.6667 %)
+</span><span class='line'>        low-mild         1 (1.6667 %)
+</span><span class='line'> Variance from outliers : 33.6000 % Variance is moderately inflated by outliers</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I can see there that it takes about 20ms to parse a typical markdown file for one of my blog posts. That would mean that, ignoring other overhead for serving a webpage, I could serve about 50 pages per second. That seems more than acceptable for the amount of traffic I expect to receive on this blog.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[New Habits]]></title>
