@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Clojure | Bytes and Bikes]]></title>
   <link href="http://www.stevenoxley.com/blog/categories/clojure/atom.xml" rel="self"/>
   <link href="http://www.stevenoxley.com/"/>
-  <updated>2020-07-14T08:29:09-07:00</updated>
+  <updated>2020-07-17T14:09:06-07:00</updated>
   <id>http://www.stevenoxley.com/</id>
   <author>
     <name><![CDATA[Steven Oxley]]></name>
@@ -12,6 +12,48 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Clojure Web Application Building Blocks]]></title>
+    <link href="http://www.stevenoxley.com/blog/2020/07/17/clojure-web-application-building-blocks/"/>
+    <updated>2020-07-17T13:43:09-07:00</updated>
+    <id>http://www.stevenoxley.com/blog/2020/07/17/clojure-web-application-building-blocks</id>
+    <content type="html"><![CDATA[<p>As I&rsquo;ve mentioned before, I&rsquo;m rebuilding this website using Clojure.</p>
+
+<p>When starting a new project, I find you often have two choices: start with a batteries-included framework or build up the framework yourself from your own code and any libraries you might want to leverage. I usually choose the first when I want to get something up and running quickly. I choose the second when I want to learn as much as I can and have fun tinkering along the way.</p>
+
+<p>This time, I am choosing to build up the framework of my application myself. In the past I have used a baterries-included web application template, <a href="https://github.com/plexus/chestnut">chestnut</a>, but this time I decided not to go that route. One reason I decided not to use chestnut is that I don&rsquo;t think I&rsquo;ll need any client-side cljs code. Chestnut&rsquo;s main use case is compiling and reloading cljs.</p>
+
+<p>The only functionality I want in the first iteration of my framework is markdown to HTML parsing, an HTTP server to serve that HTML, and live reloading (reloading of the page when something server-side changes).</p>
+
+<p>To support those features, I have started evaluating the libraries I want to use:</p>
+
+<ul>
+<li>These are micro-frameworks for managing dependencies, keeping things loosely coupled, and setting up a <a href="http://thinkrelevance.com/blog/2013/06/04/clojure-workflow-reloaded">reloaded workflow</a> for development. Integrant is currently the frontrunner.
+
+<ul>
+<li><a href="https://github.com/weavejester/integrant">Integrant</a></li>
+<li><a href="https://github.com/tolitius/mount">Mount</a></li>
+<li><a href="https://github.com/stuartsierra/component">Component</a> &ndash; I&rsquo;ve used Component once before, but Integrant claims to solve some of the difficulties I had with Component.</li>
+</ul>
+</li>
+<li><a href="https://github.com/ring-clojure/ring">Ring</a> &ndash; the <em>de facto</em> standard Clojure web application library.</li>
+<li>I have decided to use bidi as a routing library because I don&rsquo;t like Compojure.
+
+<ul>
+<li><a href="https://github.com/juxt/bidi">bidi</a> &ndash; a routing library that just uses data structures for defining routes.</li>
+<li><a href="https://github.com/weavejester/compojure">compojure</a> &ndash; a routing library which I find distasteful due to its unnecessary use of macros.</li>
+</ul>
+</li>
+<li><a href="https://github.com/wkf/hawk">hawk</a> for watching files to kick off live reloading.</li>
+</ul>
+
+
+<p>I would like to keep the libraries I&rsquo;m using fairly minimal. I may add some more to this list for things like generating HTML, but I&rsquo;d like to write a quite a bit of code myself.</p>
+
+<p>I feel good about choosing to build up the framework of my application myself. Getting to know each piece may help me develop the application even more quickly in the long run.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Clojure Markdown Parsing Benchmarks]]></title>
