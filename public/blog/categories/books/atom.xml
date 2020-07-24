@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Books | Bytes and Bikes]]></title>
+  <link href="http://www.stevenoxley.com/blog/categories/books/atom.xml" rel="self"/>
+  <link href="http://www.stevenoxley.com/"/>
+  <updated>2020-07-23T23:18:00-07:00</updated>
+  <id>http://www.stevenoxley.com/</id>
+  <author>
+    <name><![CDATA[Steven Oxley]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Book Review: Skunk Works by Ben Rich]]></title>
+    <link href="http://www.stevenoxley.com/blog/2020/07/23/book-review-skunk-works-by-ben-rich/"/>
+    <updated>2020-07-23T21:48:21-07:00</updated>
+    <id>http://www.stevenoxley.com/blog/2020/07/23/book-review-skunk-works-by-ben-rich</id>
+    <content type="html"><![CDATA[<p><em>Skunk Works</em> by Ben Rich is a memoir about Rich&rsquo;s time working at the <a href="https://en.wikipedia.org/wiki/Skunk_Works">Lockheed Skunk Works</a>. The Skunk Works is a small, secretive, advanced research and development organization within Lockheed. Rich relates his experiences from first being tapped by Kelly Johnson &ndash; the founder of Skunk Works &ndash; to design some systems on the <a href="https://en.wikipedia.org/wiki/Lockheed_U-2">U-2 spy plane</a> to taking the reins when Johnson retired to his own eventual retirement.</p>
+
+<p>The philosophy of the Skunk Works is what stood out to me in the book. Skunk Works isn&rsquo;t just a secret department within Lockheed. The Skunk Works philosophy emphasizes small, flat, tightly integrated teams that have autonomy to make decisions about their projects. <a href="https://www.lockheedmartin.com/en-us/who-we-are/business-areas/aeronautics/skunkworks/kelly-14-rules.html">Kelly Johnson&rsquo;s 14 rules and practices</a> provides a map for the Skunk Works to operate. Engineers are required to visit the shop floor to interact with those machining the parts and assembling the aircrafts. Outside inspections are kept to a minimum. Unnecessary documentation must be eliminated, but important work must be comprehensively reported.</p>
+
+<p>It is difficult to argue with the results of the Skunk Works' approach. Guided by Johnson&rsquo;s 14 rules and practices, the Skunk Works was able to develop aircraft that were in some cases decades ahead of anything their competitors could design or build. The U-2 spy plane set elevation records that made it untouchable by enemy aircraft or missiles. The <a href="https://en.wikipedia.org/wiki/Lockheed_SR-71_Blackbird">SR-71 blackbird</a> <em>still</em> holds <a href="https://en.wikipedia.org/wiki/Flight_airspeed_record">the airspeed record for a manned airbreathing jet engine aircraft</a>&hellip; which was set 44 years ago in 1976. The <a href="https://en.wikipedia.org/wiki/Lockheed_F-117_Nighthawk">F-117 Nighthawk</a> was the very first stealth aircraft &ndash; designed not to reflect enemy radar. Only one Nighthawk was ever lost in combat. And they often created these airplanes and others ahead of schedule and under budget.</p>
+
+<p>Ben Rich personally worked on every one of the aforementioned aircraft, so <em>Skunk Works</em> includes many fascinating anecdotes about the technology, politics, missteps, and successes that went into each one. Rich also relates accounts of other Skunk Works projects &ndash; some successful, some not &ndash; as well as personal accounts of his relationship with Kelly Johnson and other aspects of his life.</p>
+
+<p>Some particularly interesting sections of the book are anecdotes provided by people other than Rich. I enjoyed hearing from test pilots, politicians, military brass, and Rich&rsquo;s coworkers. Some of these accounts really helped emphasize the impact that Rich and the Skunk Works have had over the past seven decades.</p>
+
+<p>I think that there is a lot to be learned from the Skunk Works approach to work. It&rsquo;s possible to accomplish a great deal with small, efficient, autonomous teams. I was inspired by this book to pursue a similar approach in my own work, and I was spellbound at points that such great feats of engineering could be accomplished with so little.</p>
+]]></content>
+  </entry>
+  
+</feed>
