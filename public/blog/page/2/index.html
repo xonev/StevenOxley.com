@@ -9,7 +9,7 @@
   <meta name="author" content="Steven Oxley">
 
   
-  <meta name="description" content="First post! Aww yeeeeah, I win. Seriously, though, these are the beginnings of a new blog which I have formed using the Octopress platform (some of &hellip;">
+  <meta name="description" content="I upgraded to Ubuntu 11.10 this evening and the first thing I noticed was that my touchpad no longer worked&hellip; Of course, I immediately &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,6 +84,51 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2011/11/02/why-no-touchie-upgrading-to-ubuntu-11-dot-10/">Why No Touchie: Upgrading to Ubuntu 11.10</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-11-02T01:33:00-07:00" pubdate data-updated="true">Nov 2<span>nd</span>, 2011</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I upgraded to Ubuntu 11.10 this evening and the first thing I noticed was that my touchpad no longer worked&hellip; Of course, I immediately suspected that &ldquo;touchpad-indicator&rdquo;, the application I installed to disable my touchpad when I have a normal mouse plugged in, was to blame.  However, I decided to do some searching around first and found a couple of forum posts about similar problems.  After reading about their woes, I decided to just try removing touchpad-indicator (<code>sudo apt-get remove touchpad-indicator</code>).  After running that command line and restarting, everything worked fine.  I don&rsquo;t know what changed in the upgrade.  Perhaps it would work again after reinstalling, but I&rsquo;ll probably wait until having the touchpad enabled annoys me again before trying.</p>
+
+<p>I also ran into a problem with the &ldquo;ffi&rdquo; Ruby gem.  As I mentioned in <a href="/blog/2011/09/30/first/">the previous post</a>, I am running this blog on Octopress, which is built on Ruby.  When I would try to run <code>rake generate</code> (&ldquo;generate&rdquo; is the Octopress Rakefile target that builds all of the HTML from the markdown that I write these posts in), I would get something like the following error:</p>
+
+<pre><code>in `require': libffi.so.5: cannot open shared object file: No such file or directory</code></pre>
+
+
+<p>After some investigation, I found that this was easily fixed by running <code>sudo gem pristine ffi</code>.</p>
+
+<p>Other than these two little issues, Ubuntu 11.10 has been pretty good to me so far.  Of course, I&rsquo;ve only used it for an hour or so, but it appears that it hasn&rsquo;t totally hosed my system, so that&rsquo;s a start.  I have noticed that the <code>alt-tab</code> behavior between workspaces is now different.  It will now switch to the next most recently used application no matter what workspace that application is in whereas before it would restrict <code>alt-tab</code> switching to the current workspace.  I&rsquo;ll have to see if I get used to that.  If I don&rsquo;t, I may end up looking around for a setting to change it (I would imagine it would be configurable).  I guess we&rsquo;ll see what other issues I run up against in the following weeks.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2011/09/30/first/">First!</a></h1>
     
     
@@ -134,6 +179,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2020/08/07/mortality/">Mortality</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2020/07/23/book-review-skunk-works-by-ben-rich/">Book Review: Skunk Works by Ben Rich</a>
       </li>
     
@@ -147,10 +196,6 @@
     
       <li class="post">
         <a href="/blog/2020/07/13/clojure-markdown-parsing-benchmarks/">Clojure Markdown Parsing Benchmarks</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2020/07/12/new-habits/">New Habits</a>
       </li>
     
   </ul>
