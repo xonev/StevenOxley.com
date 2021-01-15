@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Looking Back on Dvorak"
-date: 2020-12-11 20:56:51 -0800
+date: 2020-01-14 21:06:51 -0800
 comments: true
 categories: reflection
 ---
