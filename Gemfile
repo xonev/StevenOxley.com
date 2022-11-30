@@ -17,5 +17,5 @@ group :development do
   gem 'directory_watcher', '1.4.1'
 end
 
-gem 'sinatra', '~> 1.4.2'
+gem 'sinatra', '~> 2.2.3'
 gem 'unicorn', '~> 4.8.3'
