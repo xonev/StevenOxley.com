@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "On the Uncertainty of Everything"
-date: 2012-03-13 23:32
+date: 2012-03-13
 comments: true
 categories: [philosophy, christianity]
 ---

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "First!"
-date: 2011-09-30 09:17
+date: 2011-09-30
 comments: true
 categories: [blogging]
 ---

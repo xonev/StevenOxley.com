@@ -1,0 +1,8 @@
+baseURL: 'https://www.stevenoxley.com/'
+languageCode: 'en-us'
+title: 'Bytes and Bikes'
+theme: 'brutal'
+
+permalinks:
+  page:
+    blog: /blog/:year/:month/:day/:slug
