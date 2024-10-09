@@ -3,7 +3,9 @@ layout: post
 title: "Clojure Web Application Building Blocks"
 date: 2020-07-17 13:43:09 -0700
 comments: true
-categories: clojure programming
+categories:
+  - clojure
+  - programming
 ---
 
 As I've mentioned before, I'm rebuilding this website using Clojure.

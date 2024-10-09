@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Why No Touchie: Upgrading to Ubuntu 11.10"
-date: 2011-11-02
+date: 2011-11-02 01:33
 comments: true
 categories: [linux]
 ---

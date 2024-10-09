@@ -3,7 +3,9 @@ layout: post
 title: "Mortality"
 date: 2020-08-07 21:42:18 -0700
 comments: true
-categories: philosophy habits
+categories:
+  - philosophy
+  - habits
 ---
 
 I've been listening to the book *Being Mortal* by Atul Gawande. I'm a few chapters in, but I'm already finding the book very informative and thought provoking.

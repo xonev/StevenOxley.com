@@ -1,9 +1,12 @@
 ---
 layout: post
 title: "Book Review of Shape Up: The Hipster's Waterfall"
+slug: book-review-shape-up
 date: 2020-10-19 23:00:00 -0700
 comments: true
-categories: books management
+categories:
+  - books
+  - management
 ---
 
 I have finally finished reading _Shape Up: Stop Running in Circles and Ship Work that Matters_ by Ryan Singer after many months. Now that I've made it through the book, I would subtitle it "The Hipster's Waterfall."

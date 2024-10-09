@@ -3,7 +3,9 @@ layout: post
 title: "I'm a ham! KJ7SIL"
 date: 2020-11-19 21:17:31 -0800
 comments: true
-categories: ham radio, updates
+categories:
+  - ham radio
+  - updates
 ---
 
 My ham radio license was issued this week! I have a technician class license, and my callsign is KJ7SIL.

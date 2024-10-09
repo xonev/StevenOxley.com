@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "On Learning to Read . . . Faster"
+slug: on-learning-to-read-faster
 date: 2014-02-10 10:12:52 -0600
 comments: true
 categories: learning

@@ -3,7 +3,9 @@ layout: post
 title: "Clojure Markdown Parsing Benchmarks"
 date: 2020-07-13 10:45:32 -0700
 comments: true
-categories: clojure programming
+categories:
+  - clojure
+  - programming
 ---
 
 I am working on setting up a new system for publishing content. I have a few different categories of content that I'm interested in creating. I'll have to determine exactly what the taxonomy will be, but the broad categories will probably be computers, mountain biking, and more personal stuff including relationships and religion. The first step towards this new system is just to replace the technology behind this website.
@@ -18,7 +20,9 @@ layout: post
 title: "Clojure Markdown Parsing Benchmarks"
 date: 2020-07-13 10:45:32 -0700
 comments: true
-categories: clojure programming
+categories:
+  - clojure
+  - programming
 ---
 ```
 

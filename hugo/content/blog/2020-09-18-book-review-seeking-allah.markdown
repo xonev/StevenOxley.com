@@ -1,9 +1,13 @@
 ---
 layout: post
 title: "Book Review: Seeking Allah, Finding Jesus"
+slug: book-review-seeking-allah
 date: 2020-11-17 21:30:31 -0700
 comments: true
-categories: religion christianity
+categories:
+  - religion
+  - christianity
+  - books
 ---
 
 I very highly recommend the book [_Seeking Allah, Finding Jesus_](https://www.goodreads.com/book/show/18289396-seeking-allah-finding-jesus) by Nabeel Qureshi.

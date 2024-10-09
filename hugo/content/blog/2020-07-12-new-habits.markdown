@@ -3,7 +3,9 @@ layout: post
 title: "New Habits"
 date: 2020-07-12 14:20:09 -0700
 comments: true
-categories: habits learning
+categories:
+    - habits
+    - learning
 ---
 
 This blog is ancient, but let's start a new habit with it. Let's publish something. Every day. It doesn't have to be on the blog, but writing is one of the easier things I can do. I also have a bunch of videos on my harddrive that I could edit and upload to YouTube. I just want to be creating something that I can point to every day.
