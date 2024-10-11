@@ -1,7 +1,9 @@
 baseURL: 'https://www.stevenoxley.com/'
 languageCode: 'en-us'
 title: 'Bytes and Bikes'
-theme: 'brutal'
+theme:
+  - 'brutal'
+  - 'hugo-feeds'
 
 menus:
   main:
@@ -27,6 +29,16 @@ params:
     email: steven.aj.oxley@gmail.com
     name: Steve Oxley
 
-module:
-  imports:
-    - path: codeberg.org/yelosan/hugo-feeds
+outputs:
+  home:
+    - HTML
+    - ATOM
+    - RSS
+  section:
+    - HTML
+    - ATOM
+    - RSS
+  taxonomy:
+    - HTML
+    - ATOM
+    - RSS

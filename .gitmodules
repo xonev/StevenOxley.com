@@ -1,0 +1,3 @@
+[submodule "hugo/themes/hugo-feeds"]
+	path = hugo/themes/hugo-feeds
+	url = https://codeberg.org/yelosan/hugo-feeds
