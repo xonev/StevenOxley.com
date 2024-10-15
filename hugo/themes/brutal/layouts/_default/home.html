@@ -1,7 +1,11 @@
 {{ define "main" }}
   {{ .Content }}
-  {{ range where site.RegularPages "Type" "blog" | first 5 }}
-    <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
-    {{ .Summary }}
+
+  <h2>Microblog feed</h2>
+  {{ range where site.RegularPages "Type" "mb" | first 20 }}
+  <div>
+    {{ .Content }}
+    <a href="{{ .RelPermalink }}">{{ .Date }}</a></h2>
+  </div>
   {{ end }}
 {{ end }}
