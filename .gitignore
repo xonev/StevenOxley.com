@@ -4,6 +4,7 @@
 .sass-cache
 .gist-cache
 .pygments-cache
+.terraform
 _deploy
 sass.old
 source.old
