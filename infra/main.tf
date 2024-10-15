@@ -85,6 +85,12 @@ resource "aws_cloudfront_distribution" "website" {
 
     viewer_protocol_policy = "redirect-to-https"
   }
+
+  custom_error_response {
+    error_code = 403
+    response_code = 404
+    response_page_path = "/404/index.html"
+  }
 }
 
 resource "aws_acm_certificate" "website" {
