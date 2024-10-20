@@ -15,4 +15,4 @@ So I've decided today that I'm going to start taking this flexibility thing seri
 
 Wish me luck!
 
-{{< figure src="/images/hamstring-flex-day-1.jpg" title="Me trying and failing to reach my toes - inches away!" width=100% >}}
+{{< figure src="/images/hamstring-flex-day-1.jpg" alt="Me trying and failing to reach my toes - inches away!" width=100% >}}
