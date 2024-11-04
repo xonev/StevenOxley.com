@@ -8,4 +8,4 @@ tags:
 The hamstring stretching routine [I’ve been doing](https://www.stevenoxley.com/mb/hamstring-flexibility/) is working! After only a couple days I saw major gains. Unfortunately, it seems like my hamstrings reset each day and I have to stretch them again to reflexify them. Also, I haven’t seen much absolute progress since the first couple days. I’ll keep at it!
 
 
-![Me stretching - still a few inches from touching my toes, but much closer!](hamstring-flexibility-progress-1.jpg)
+{{< figure src="/images/hamstring-flexibility-progress-1.jpg" alt="Me stretching - still a few inches from touching my toes, but much closer!" width=100% >}}
