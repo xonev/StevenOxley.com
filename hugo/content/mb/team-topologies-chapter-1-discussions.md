@@ -2,8 +2,10 @@
 title: "Team Topologies Book Club: Chapter 1 Discussions"
 date: 2024-11-04T16:33:02-08:00
 layout: microblog
+tags:
+    - books
 ---
-I love books. I love reading books about work. I especially love discussing books related to work with my colleagues, so I frequently run and participate in book clubs at work. I'm currently running a book club with the book *Team Topologies* by Matthew Skelton and Manuel Pais, and I thought I'd share the discussion questions I'm using for the book. Here are the questions for chapter 1:
+I love books. I love reading books about work. I especially love discussing books related to work with my colleagues, so I frequently run and participate in book clubs at work. I'm currently running a book club with the book *Team Topologies* by Matthew Skelton and Manuel Pais, and I thought I'd share the discussion questions I'm using for the book club. Here are the questions for chapter 1:
 
 1. What are the takeaways you have from this chapter?
 2. What ways have you seen our company's org chart mismatch our communication structures?
