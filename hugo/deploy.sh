@@ -7,5 +7,6 @@ if [[ "$#" -gt 0 && "$1" == "clean" ]]; then
 fi
 
 hugo
-aws s3 sync --profile soxley --delete public s3://stevenoxley-com-site
-aws cloudfront create-invalidation --profile soxley --distribution-id E3CPVBXOIRWO5M --paths "/*"
+export AWS_PROFILE="soxley"
+hugo deploy
+aws cloudfront create-invalidation --distribution-id E3CPVBXOIRWO5M --paths "/*"
