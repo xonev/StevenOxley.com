@@ -8,5 +8,4 @@ fi
 
 hugo
 export AWS_PROFILE="soxley"
-hugo deploy
-aws cloudfront create-invalidation --distribution-id E3CPVBXOIRWO5M --paths "/*"
+hugo deploy --logLevel info

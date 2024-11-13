@@ -45,5 +45,6 @@ outputs:
 
 deployment:
   targets:
-    - name: "s3-prod"
+    - name: s3-prod
       URL: s3://stevenoxley-com-site?region=us-west-2
+      cloudFrontDistributionID: E3CPVBXOIRWO5M
