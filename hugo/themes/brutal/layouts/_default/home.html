@@ -5,7 +5,7 @@
   {{ range where site.RegularPages "Type" "mb" | first 20 }}
   <div>
     {{ .Content }}
-    <a href="{{ .RelPermalink }}">{{ .Date }}</a></h2>
+    <a href="{{ .RelPermalink }}">{{ .Date | time.Format ":date_medium" }} {{ .Date | time.Format ":time_short" }}</a></h2>
   </div>
   {{ end }}
 {{ end }}
