@@ -3,9 +3,9 @@
 
   <h2>Microblog feed</h2>
   {{ range where site.RegularPages "Type" "mb" | first 20 }}
-  <div>
+  <div class="mb-item">
     {{ .Content }}
-    <a href="{{ .RelPermalink }}">{{ .Date | time.Format ":date_medium" }} {{ .Date | time.Format ":time_short" }}</a></h2>
+    <a href="{{ .RelPermalink }}">{{ .Date | time.Format ":date_medium" }} {{ .Date | time.Format ":time_short" }}</a>
   </div>
   {{ end }}
 {{ end }}
