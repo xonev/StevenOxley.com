@@ -28,14 +28,6 @@ a:hover {
   color: #0d47a1;
 }
 
-/* Regular links in content should have underline on hover */
-.mb-item p a {
-  text-decoration: underline;
-}
-
-.mb-item p a:hover {
-  color: #0d47a1;
-}
 nav ul {
   display: flex;
   justify-content: center;
