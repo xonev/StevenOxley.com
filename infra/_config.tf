@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "5.71.0"
+      version = "5.95.0"
     }
     archive = {
       source  = "hashicorp/archive"
@@ -10,8 +10,10 @@ terraform {
     }
   }
   backend "s3" {
-    role_arn = "arn:aws:iam::713881783677:role/OrganizationAccountAccessRole"
-    session_name = "terraform-state-usw2"
+    assume_role = {
+      role_arn = "arn:aws:iam::713881783677:role/OrganizationAccountAccessRole"
+      session_name = "terraform-state-usw2"
+    }
 
     bucket         = "stevenoxley-personal-prod-state"
     key            = "stevenoxley-com-website.tfstate"

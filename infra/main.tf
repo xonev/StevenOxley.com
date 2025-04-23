@@ -36,6 +36,14 @@ resource "aws_route53_record" "domain" {
   }
 }
 
+resource "aws_route53_record" "bluesky_verification" {
+  zone_id = aws_route53_zone.domain.zone_id
+  name = "_atproto.${local.website_domain}"
+  type = "TXT"
+  ttl = 300
+  records = ["did=did:plc:lnmfyhng3xfs4q2nv5bsdwpo"]
+}
+
 resource "aws_cloudfront_distribution" "website" {
   origin {
     domain_name = aws_s3_bucket.website.bucket_regional_domain_name
