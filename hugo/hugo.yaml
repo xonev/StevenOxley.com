@@ -1,9 +1,9 @@
-baseURL: 'https://www.stevenoxley.com/'
-languageCode: 'en-us'
-title: 'Bytes and Bikes'
+baseURL: "https://www.stevenoxley.com/"
+languageCode: "en-us"
+title: "Bytes and Bikes"
 theme:
-  - 'brutal'
-  - 'hugo-feeds'
+  - "brutal"
+  - "hugo-feeds"
 
 menus:
   main:
