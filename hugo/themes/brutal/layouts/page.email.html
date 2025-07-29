@@ -198,6 +198,14 @@
 </head>
 
 <body>
+  {{- if .Params.email_preface }}
+  <div class="preface">
+    {{ $content := .Params.email_preface }}
+    {{ $content = replace $content "{{ .Page.Permalink }}" .Page.Permalink }}
+    {{ $content | markdownify }}
+  </div>
+  {{- end -}}
+
   <div class="header">
     {{- /* Hero image section - check for featured image or explicit hero image */ -}}
     {{- $heroImage := "" -}}

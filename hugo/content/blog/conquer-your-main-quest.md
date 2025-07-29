@@ -4,6 +4,13 @@ date: 2025-07-24T14:33:07-07:00
 hero_image: "/images/conquer-your-main-quest/knight-on-quest.png"
 images:
   user_data: "/images/conquer-your-main-quest/aws-user-data-seeq-install-script.png"
+email_preface: |
+  Hi there {{FirstName}},
+  Welcome to another installment of my small platform emails. Today I want to share some thoughts that will hopefully help you resolve distractions so that you can focus on your main quest. I hope it's helpful! And if you ever have a topic you'd like me to write about, let me know.
+
+  You can also read this [on my website]({{ .Page.Permalink }}).
+
+  Enjoy!
 ---
 
 ## v0.0.1
