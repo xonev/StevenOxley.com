@@ -7,6 +7,10 @@ body {
   padding: 0 1rem;
 }
 
+pre {
+  overflow-x: auto;
+}
+
 header {
   border-bottom: 1px solid #222;
   margin-bottom: 1rem;
@@ -65,4 +69,8 @@ nav ul ul {
 .mb-item>a:hover {
   color: #1a73e8;
   border-bottom: 1px solid #1a73e8;
+}
+
+.hero-image {
+  width: 100%;
 }

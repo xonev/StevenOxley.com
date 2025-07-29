@@ -222,14 +222,11 @@
 
     <h1 class="title">{{ .Title }}</h1>
     <div class="meta">
-      {{- with .Date -}}
-      Published {{ .Format "January 2, 2006" }}
-      {{- end -}}
       {{- with .Params.author.name -}}
-      by {{ . }}
+      {{ . }}
       {{- else -}}
       {{- with .Site.Params.author.name -}}
-      by {{ . }}
+      {{ . }}
       {{- end -}}
       {{- end -}}
     </div>

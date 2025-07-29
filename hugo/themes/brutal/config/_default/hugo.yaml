@@ -1,0 +1,6 @@
+outputFormats:
+  email:
+    baseName: index.email
+    isHTML: true
+    isPlainText: false
+    mediaType: text/html

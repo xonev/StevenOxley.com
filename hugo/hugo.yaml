@@ -29,13 +29,6 @@ params:
     email: steven.aj.oxley@gmail.com
     name: Steve Oxley
 
-outputFormats:
-  email:
-    baseName: index.email
-    isHTML: true
-    isPlainText: false
-    mediaType: text/html
-
 outputs:
   home:
     - HTML
