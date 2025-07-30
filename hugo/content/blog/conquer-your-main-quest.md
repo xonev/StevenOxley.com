@@ -4,6 +4,8 @@ date: 2025-07-24T14:33:07-07:00
 hero_image: "/images/conquer-your-main-quest/knight-on-quest.png"
 images:
   user_data: "/images/conquer-your-main-quest/aws-user-data-seeq-install-script.png"
+categories:
+  - small platform
 email_preface: |
   Hi there {{FirstName}},
   Welcome to another installment of my small platform emails. Today I want to share some thoughts that will hopefully help you resolve distractions so that you can focus on your main quest. I hope it's helpful! And if you ever have a topic you'd like me to write about, let me know.
@@ -94,3 +96,8 @@ If you want to get started with a do-nothing script, Dan Slimmon actually has [a
 Once we had abandoned, offloaded, or completed our side quests, we were finally able to make some progress and eventually complete our main quest. I'll tell you more about that in future articles.
 
 In the meantime: what's your main quest right now? What side quests are standing in your way? Are there any you should abandon? Offload? Complete?
+
+## Join My Mailing List
+I have a mailing list where I write about topics that would be relevant to people who are just getting started creating or evolving a [platform](https://platformengineering.org/blog/what-is-platform-engineering) for their organization, or those that handle the platform responsibilities at companies that don't have a dedicated platform team. If that sounds interesting to you, sign up for my mailing list below!
+
+<script async src="https://eomail6.com/form/969cad3c-5ae6-11f0-97e8-b7e8ac832f27.js" data-form="969cad3c-5ae6-11f0-97e8-b7e8ac832f27"></script>

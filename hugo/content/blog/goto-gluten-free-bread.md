@@ -20,7 +20,7 @@ Then you're ready for the recipe:
 
 
 ## Wet ingredients
-- 3 eggs
+- 3 large eggs (or 4 not-so-large eggs - better too err on the side of too many than too few)
 - 1.5 cups vanilla soy milk
 - 1 tbsp cider vinegar
 - 2 tbsp oil
@@ -37,6 +37,8 @@ Then you're ready for the recipe:
 - During the kneading parts of the cycle use a rubber spatula to scrape down the sides and agitate to make sure the dough is being mixed by the paddle
 
 ## Details to get it right
+Make sure to put enough eggs in. I almost always use four now, though I have had it turn out well with three. We get eggs from a local farm, so they vary in size quite a lot. The variance in size can throw off the result quite a bit when you only put in three eggs.
+
 When measuring the flour and corn starch, this is one of the critical things I learned:  don't use the measuring cup to scoop the flour out of the bag because that will compact it and you'll have too much flour. Instead, if you can't weigh it out, shake the bag, then gently spoon the flour into the measuring cup. When it's full, gently scrape off the top with a knife.
 
 You may have some questions:  can I substitute some other type of milk? Can I use sugar instead of honey? Can I use a different gluten-free flour blend? I don't know. I'm not a baker. Give it a try and let me know what happens.

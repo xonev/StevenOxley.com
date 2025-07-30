@@ -19,6 +19,9 @@ menus:
     - name: About
       pageRef: /about
       weight: 40
+    - name: Mailing List
+      pageRef: /mailing-list
+      weight: 50
 
 permalinks:
   page:

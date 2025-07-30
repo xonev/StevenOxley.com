@@ -1,6 +1,8 @@
 ---
 title: 'The Principle of Production Purpose'
 date: 2025-07-06T21:46:22-06:00
+categories:
+  - small platform
 ---
 
 “We want you to be the manager,” my VP of engineering told me.
