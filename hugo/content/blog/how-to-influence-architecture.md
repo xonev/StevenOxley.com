@@ -14,7 +14,7 @@ email_preface: |
   You can also read this [on my website]({{ .Page.Permalink }}).
 ---
 
-A colleague of mine asked me, "How do you get a shared technical style across teams and also between teams?" He specifically mentioned, "[I] often find people come up with functional solutions to problems that break core abstractions of our platform, I can usually unwind things myself but I can't be in all places at the same time."
+A colleague asked me, "How do you get a shared technical style across teams and also between teams?" He specifically mentioned, "[I] often find people come up with functional solutions to problems that break core abstractions of our platform, I can usually unwind things myself but I can't be in all places at the same time."
 
 I had a couple of thoughts immediately, but I didn't think they were very helpful. After mulling it over a few months, I think the heart of his question is, "How do I influence good software architecture when I can't make every technical decision myself (and don't have the authority to anyway)?"
 
