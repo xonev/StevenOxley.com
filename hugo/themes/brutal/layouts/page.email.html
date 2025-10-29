@@ -198,6 +198,7 @@
 </head>
 
 <body>
+  <div style="display: none; max-height: 0px; overflow: hidden;">{{ "{{PreviewText}}" }}&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;</div>
   {{- if .Params.email_preface }}
   <div class="preface">
     {{ $content := .Params.email_preface }}
@@ -249,8 +250,8 @@
       {{ "{{SenderInfo}}" }}
     </div>
 
-    <p><a href="{{ "{{UnsubscribeURL}}" }}">Unsubscribe</a></p>
-    <p><a href="{{ "{{RewardsURL}}" }}">Powered by EmailOctopus</a></p>
+    <p>{{ safeHTML `<a href="{{UnsubscribeURL}}">Unsubscribe</a>` }}</p>
+    <p>{{ safeHTML `<a href="{{RewardsURL}}">Powered by EmailOctopus</a>` }}</p>
 
     {{- with .Site.Params.author.name -}}
     <p>&copy; {{ now.Format "2006" }} {{ . }}</p>
