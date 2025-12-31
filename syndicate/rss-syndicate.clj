@@ -197,7 +197,7 @@
                       "client_id=" client-id "&"
                       "redirect_uri=" (java.net.URLEncoder/encode callback-url "UTF-8") "&"
                       "state=" state "&"
-                      "scope=" (java.net.URLEncoder/encode "w_member_social" "UTF-8"))
+                      "scope=" (java.net.URLEncoder/encode "openid profile w_member_social" "UTF-8"))
         promise-atom (promise)]
 
     (println "Opening browser for authorization...")
@@ -240,12 +240,25 @@
                                                         (str "client_id=" (java.net.URLEncoder/encode client-id "UTF-8"))
                                                         (str "client_secret=" (java.net.URLEncoder/encode client-secret "UTF-8"))])})]
               (if (= 200 (:status response))
-                (let [tokens (json/parse-string (:body response) true)]
-                  (println "✓ LinkedIn OAuth 2.0 authentication successful!")
-                  {:client-id client-id
-                   :client-secret client-secret
-                   :access-token (:access_token tokens)
-                   :expires-at (+ (System/currentTimeMillis) (* 1000 (:expires_in tokens)))})
+                (let [tokens (json/parse-string (:body response) true)
+                      access-token (:access_token tokens)
+                      ;; Fetch user profile to get member ID
+                      profile-response (http/get "https://api.linkedin.com/v2/userinfo"
+                                                 {:headers {"Authorization" (str "Bearer " access-token)}})
+                      profile (when (= 200 (:status profile-response))
+                                (json/parse-string (:body profile-response) true))
+                      member-id (:sub profile)]
+                  (if member-id
+                    (do
+                      (println "✓ LinkedIn OAuth 2.0 authentication successful!")
+                      {:client-id client-id
+                       :client-secret client-secret
+                       :access-token access-token
+                       :member-id member-id
+                       :expires-at (+ (System/currentTimeMillis) (* 1000 (:expires_in tokens)))})
+                    (do
+                      (println "Failed to fetch LinkedIn member ID")
+                      nil)))
                 (do
                   (println "Token exchange failed: " (:status response) " - " (:body response))
                   nil)))))
@@ -342,43 +355,96 @@
 ;; Strip HTML tags
 (defn strip-html [s]
   (-> s
-      (str/replace #"<[^>]*>" "")
+      ;; First decode HTML entities
       (str/replace #"&nbsp;" " ")
       (str/replace #"&amp;" "&")
       (str/replace #"&lt;" "<")
       (str/replace #"&gt;" ">")
-      (str/replace #"&quot;" "\"")))
+      (str/replace #"&quot;" "\"")
+      ;; Then strip HTML tags (must start with letter or /)
+      (str/replace #"</?[a-zA-Z][^>]*>" "")))
 
 (defn split-into-threads [text link max-chars]
   (let [thread-marker " [→]"
-        link-length (count link)
-        first-thread-max (- max-chars link-length 10)
-        other-thread-max (- max-chars (count thread-marker) 5)
-        words (str/split text #"\s+")]
-    (loop [remaining words
-           current-thread []
-           threads []
-           is-first true]
-      (if (empty? remaining)
-        (conj threads
-              (if is-first
-                (str (str/join " " current-thread) "\n\n" link)
-                (str (str/join " " current-thread) thread-marker)))
-        (let [word (first remaining)
-              current-length (reduce + (count (str/join " " current-thread)))
-              max-for-thread (if is-first first-thread-max other-thread-max)]
-          (if (> (+ current-length (count word) 1) max-for-thread)
-            (recur remaining
-                   []
-                   (conj threads
-                         (if is-first
-                           (str (str/join " " current-thread) "\n\n" link)
-                           (str (str/join " " current-thread) thread-marker)))
-                   false)
-            (recur (rest remaining)
-                   (conj current-thread word)
-                   threads
-                   is-first)))))))
+        link-suffix (str "\n\n" link)
+        marker-length (count thread-marker)
+        ;; Split text into paragraphs, preserving line breaks
+        paragraphs (str/split text #"\n+")
+
+        ;; Helper function to split a single paragraph into words if needed
+        split-paragraph (fn [paragraph max-available]
+                          (let [words (str/split paragraph #"\s+")]
+                            (loop [remaining words
+                                   current []
+                                   chunks []]
+                              (if (empty? remaining)
+                                (if (empty? current)
+                                  chunks
+                                  (conj chunks (str/join " " current)))
+                                (let [word (first remaining)
+                                      current-text (str/join " " current)
+                                      new-text (if (empty? current) word (str current-text " " word))]
+                                  (if (> (count new-text) max-available)
+                                    (recur (rest remaining)
+                                           [word]
+                                           (conj chunks current-text))
+                                    (recur (rest remaining)
+                                           (conj current word)
+                                           chunks)))))))
+
+        ;; Build threads from paragraphs
+        build-threads (fn []
+                        (loop [remaining paragraphs
+                               current-parts []
+                               threads []]
+                          (if (empty? remaining)
+                            ;; Flush any remaining content
+                            (if (empty? current-parts)
+                              threads
+                              (conj threads (str/join "\n\n" current-parts)))
+                            (let [para (first remaining)
+                                  current-text (str/join "\n\n" current-parts)
+                                  ;; Reserve space for marker on all but last thread
+                                  max-available (- max-chars marker-length 5)
+                                  new-text (if (empty? current-parts)
+                                            para
+                                            (str current-text "\n\n" para))]
+                              (cond
+                                ;; Paragraph fits in current thread
+                                (<= (count new-text) max-available)
+                                (recur (rest remaining)
+                                       (conj current-parts para)
+                                       threads)
+
+                                ;; Start new thread with this paragraph if current is not empty
+                                (and (not (empty? current-parts)) (<= (count para) max-available))
+                                (recur (rest remaining)
+                                       [para]
+                                       (conj threads current-text))
+
+                                ;; Paragraph is too long, need to split it
+                                :else
+                                (let [chunks (split-paragraph para max-available)]
+                                  (if (empty? current-parts)
+                                    ;; Add first chunk to current, rest become new paragraphs
+                                    (recur (concat (rest chunks) (rest remaining))
+                                           [(first chunks)]
+                                           threads)
+                                    ;; Flush current thread, then process chunks
+                                    (recur (concat chunks (rest remaining))
+                                           []
+                                           (conj threads current-text)))))))))]
+
+    ;; Add markers and link
+    (let [all-threads (build-threads)
+          thread-count (count all-threads)]
+      (if (= thread-count 1)
+        ;; Single thread - just add link
+        [(str (first all-threads) link-suffix)]
+        ;; Multiple threads - add markers to all but last, link to last
+        (vec (concat
+               (map #(str % thread-marker) (take (dec thread-count) all-threads))
+               [(str (last all-threads) link-suffix)]))))))
 
 ;; Format content for different platforms
 (defn format-content [content link platform]
@@ -415,14 +481,24 @@
                    x-config)]
     (if (:access-token x-config)
       (try
-        (let [response (http/post "https://api.twitter.com/2/tweets"
-                                  {:headers {"Authorization" (str "Bearer " (:access-token x-config))
-                                             "Content-Type" "application/json"}
-                                   :body (json/generate-string
-                                          {:text (first (:threads content))})})]
-          (if (= 201 (:status response))
-            (println "✓ Posted to X successfully")
-            (println (str "Failed to post to X: " (:status response) " - " (:body response)))))
+        (let [threads (:threads content)]
+          (loop [remaining threads
+                 previous-tweet-id nil
+                 index 1]
+            (when-let [tweet-text (first remaining)]
+              (let [tweet-data (if previous-tweet-id
+                                {:text tweet-text
+                                 :reply {:in_reply_to_tweet_id previous-tweet-id}}
+                                {:text tweet-text})
+                    response (http/post "https://api.twitter.com/2/tweets"
+                                        {:headers {"Authorization" (str "Bearer " (:access-token x-config))
+                                                   "Content-Type" "application/json"}
+                                         :body (json/generate-string tweet-data)})]
+                (if (= 201 (:status response))
+                  (let [tweet-id (get-in (json/parse-string (:body response) true) [:data :id])]
+                    (println (str "✓ Posted tweet " index " of " (count threads)))
+                    (recur (rest remaining) tweet-id (inc index)))
+                  (println (str "Failed to post tweet " index ": " (:status response) " - " (:body response))))))))
         (catch Exception e
           (println (str "Error posting to X: " (.getMessage e)))))
       (println "X OAuth 2.0 access token not configured. Run 'auth x' to authenticate."))))
@@ -432,31 +508,43 @@
   (let [linkedin-config (get config :linkedin)]
     (if (:access-token linkedin-config)
       (try
-        ;; First, get the user's profile to get the person URN
-        (let [profile-response (http/get "https://api.linkedin.com/v2/userinfo"
-                                         {:headers {"Authorization" (str "Bearer " (:access-token linkedin-config))}})
-              profile (when (= 200 (:status profile-response))
-                        (json/parse-string (:body profile-response) true))
-              person-urn (str "urn:li:person:" (:sub profile))]
-
-          (if person-urn
-            (let [response (http/post "https://api.linkedin.com/v2/ugcPosts"
+        ;; Use the stored member ID from authentication
+        (let [member-id (:member-id linkedin-config)
+              _ (when-not member-id
+                  (println "LinkedIn member ID not found. Please re-authenticate with: bb rss-syndicate.clj auth linkedin"))
+              person-urn (when member-id (str "urn:li:person:" member-id))
+              ;; Use a known active LinkedIn API version (202511 = November 2025)
+              ;; LinkedIn releases new versions monthly and supports them for 1 year
+              linkedin-version "202511"
+              response (when person-urn
+                         (http/post "https://api.linkedin.com/rest/posts"
                                       {:headers {"Authorization" (str "Bearer " (:access-token linkedin-config))
                                                  "Content-Type" "application/json"
-                                                 "X-Restli-Protocol-Version" "2.0.0"}
+                                                 "X-Restli-Protocol-Version" "2.0.0"
+                                                 "LinkedIn-Version" linkedin-version}
                                        :body (json/generate-string
                                               {:author person-urn
+                                               :commentary (:content content)
+                                               :visibility "PUBLIC"
+                                               :distribution {:feedDistribution "MAIN_FEED"
+                                                            :targetEntities []
+                                                            :thirdPartyDistributionChannels []}
                                                :lifecycleState "PUBLISHED"
-                                               :specificContent {"com.linkedin.ugc.ShareContent"
-                                                                 {:shareCommentary {:text (:content content)}
-                                                                  :shareMediaCategory "NONE"}}
-                                               :visibility {"com.linkedin.ugc.MemberNetworkVisibility" "PUBLIC"}})})]
-              (if (= 201 (:status response))
-                (println "✓ Posted to LinkedIn successfully")
-                (println (str "Failed to post to LinkedIn: " (:status response) " - " (:body response)))))
-            (println "Failed to get LinkedIn user profile")))
+                                               :isReshareDisabledByAuthor false})}))]
+          (when response
+            (if (= 201 (:status response))
+              (println "✓ Posted to LinkedIn successfully")
+              (do
+                (println "\n=== LinkedIn Post Failed ===")
+                (println "Status:" (:status response))
+                (println "Response Headers:" (:headers response))
+                (println "Response Body:" (:body response))))))
         (catch Exception e
-          (println (str "Error posting to LinkedIn: " (.getMessage e)))))
+          (println "\n=== LinkedIn Error ===")
+          (println "Error message:" (.getMessage e))
+          (println "Error type:" (type e))
+          (when (instance? clojure.lang.ExceptionInfo e)
+            (println "Error data:" (ex-data e)))))
       (println "LinkedIn OAuth 2.0 access token not configured. Run 'auth linkedin' to authenticate."))))
 
 (defn post-to-bluesky [content config]
@@ -470,29 +558,60 @@
                                              :password password})})
             session (json/parse-string (:body session-resp) true)]
         (when (:accessJwt session)
-          ;; Post content
-          (let [response (http/post "https://bsky.social/xrpc/com.atproto.repo.createRecord"
-                                    {:headers {"Authorization" (str "Bearer " (:accessJwt session))
-                                               "Content-Type" "application/json"}
-                                     :body (json/generate-string
-                                            {:repo (:did session)
-                                             :collection "app.bsky.feed.post"
-                                             :record {:text (first (:threads content))
-                                                      :createdAt (str (java.time.Instant/now))}})})]
-            (when (= 200 (:status response))
-              (println "✓ Posted to Bluesky successfully")))))
+          (let [threads (:threads content)]
+            (loop [remaining threads
+                   previous-post nil
+                   index 1]
+              (when-let [post-text (first remaining)]
+                (let [record (if previous-post
+                              {:text post-text
+                               :createdAt (str (java.time.Instant/now))
+                               :reply {:root {:uri (:root-uri previous-post)
+                                             :cid (:root-cid previous-post)}
+                                      :parent {:uri (:uri previous-post)
+                                              :cid (:cid previous-post)}}}
+                              {:text post-text
+                               :createdAt (str (java.time.Instant/now))})
+                      response (http/post "https://bsky.social/xrpc/com.atproto.repo.createRecord"
+                                          {:headers {"Authorization" (str "Bearer " (:accessJwt session))
+                                                     "Content-Type" "application/json"}
+                                           :body (json/generate-string
+                                                  {:repo (:did session)
+                                                   :collection "app.bsky.feed.post"
+                                                   :record record})})]
+                  (if (= 200 (:status response))
+                    (let [result (json/parse-string (:body response) true)
+                          post-data {:uri (:uri result)
+                                    :cid (:cid result)
+                                    :root-uri (or (:root-uri previous-post) (:uri result))
+                                    :root-cid (or (:root-cid previous-post) (:cid result))}]
+                      (println (str "✓ Posted Bluesky post " index " of " (count threads)))
+                      (recur (rest remaining) post-data (inc index)))
+                    (println (str "Failed to post to Bluesky: " (:status response) " - " (:body response))))))))))
       (println "Bluesky credentials not configured"))))
 
 (defn post-to-mastodon [content config]
   (let [{:keys [instance access-token]} (get config :mastodon)]
     (if (and instance access-token)
-      (let [response (http/post (str instance "/api/v1/statuses")
-                                {:headers {"Authorization" (str "Bearer " access-token)
-                                           "Content-Type" "application/json"}
-                                 :body (json/generate-string
-                                        {:status (first (:threads content))})})]
-        (when (= 200 (:status response))
-          (println "✓ Posted to Mastodon successfully")))
+      (let [threads (:threads content)]
+        (loop [remaining threads
+               previous-status-id nil
+               index 1]
+          (when-let [status-text (first remaining)]
+            (let [status-data (if previous-status-id
+                               {:status status-text
+                                :in_reply_to_id previous-status-id}
+                               {:status status-text})
+                  response (http/post (str instance "/api/v1/statuses")
+                                      {:headers {"Authorization" (str "Bearer " access-token)
+                                                 "Content-Type" "application/json"}
+                                       :body (json/generate-string status-data)})]
+              (if (= 200 (:status response))
+                (let [result (json/parse-string (:body response) true)
+                      status-id (:id result)]
+                  (println (str "✓ Posted Mastodon status " index " of " (count threads)))
+                  (recur (rest remaining) status-id (inc index)))
+                (println (str "Failed to post to Mastodon: " (:status response) " - " (:body response))))))))
       (println "Mastodon credentials not configured"))))
 
 (defn post-to-facebook [content config]
