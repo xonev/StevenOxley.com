@@ -1,11 +1,17 @@
+
 #!/usr/bin/env bb
+
 
 (ns rss-syndicate
   (:require [babashka.http-client :as http]
+            [org.httpkit.server :as server]
             [clojure.data.xml :as xml]
             [clojure.string :as str]
             [clojure.java.io :as io]
-            [cheshire.core :as json]))
+            [clojure.java.browse :as browse]
+            [cheshire.core :as json])
+  (:import [java.security MessageDigest SecureRandom]
+           [java.util Base64]))
 
 ;; Configuration file path
 (def config-file (str (System/getProperty "user.home") "/.rss-syndicate-config.edn"))
@@ -19,6 +25,10 @@
    :facebook 63206
    :instagram 2200})
 
+;; OAuth callback port
+(def callback-port 8080)
+(def callback-url (str "http://localhost:" callback-port "/callback"))
+
 ;; Load configuration
 (defn load-config []
   (if (.exists (io/file config-file))
@@ -29,6 +39,249 @@
 (defn save-config [config]
   (spit config-file (pr-str config)))
 
+;; OAuth 2.0 PKCE helpers
+(defn generate-random-string [length]
+  (let [chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+        random (SecureRandom.)
+        sb (StringBuilder.)]
+    (dotimes [_ length]
+      (.append sb (.charAt chars (.nextInt random (count chars)))))
+    (.toString sb)))
+
+(defn base64-url-encode [bytes]
+  (-> (Base64/getUrlEncoder)
+      (.withoutPadding)
+      (.encodeToString bytes)))
+
+(defn sha256 [text]
+  (let [digest (MessageDigest/getInstance "SHA-256")]
+    (.digest digest (.getBytes text "UTF-8"))))
+
+(defn generate-pkce-pair []
+  (let [verifier (generate-random-string 128)
+        challenge (base64-url-encode (sha256 verifier))]
+    {:verifier verifier
+     :challenge challenge}))
+
+;; OAuth 2.0 callback server
+;; OAuth 2.0 callback server
+
+(defn start-callback-server [promise-atom]
+  (server/run-server
+    (fn [request]
+      (if (= (:uri request) "/callback")
+        (let [query-params (when-let [query (:query-string request)]
+                             (into {} (map (fn [pair]
+                                            (let [[k v] (str/split pair #"=" 2)]
+                                              [k (when v (java.net.URLDecoder/decode v "UTF-8"))]))
+                                           (str/split query #"&"))))
+              code (get query-params "code")
+              state (get query-params "state")
+              error (get query-params "error")]
+          (deliver promise-atom {:code code :state state :error error})
+          {:status 200
+           :headers {"Content-Type" "text/html"}
+           :body (if error
+                   (str
+                    "<html><body><h1>Authorization Failed</h1><p>Error: " error "</p>"
+                    "<p>You can close this window.</p></body></html>")
+                   (str
+                    "<html><body><h1>Authorization Successful!</h1>"
+                    "<p>You can close this window and return to the terminal.</p></body></html>"))})
+        {:status 404 :body "Not found"}))
+    {:port callback-port}))
+
+;; X OAuth 2.0 authentication
+(defn authenticate-x-oauth2 [config]
+  (println "\n=== X OAuth 2.0 Authentication ===")
+  (let [client-id (or (get-in config [:x :client-id])
+                      (do (print "Enter X Client ID: ") (flush) (str/trim (read-line))))
+        client-secret (or (get-in config [:x :client-secret])
+                          (do (print "Enter X Client Secret (optional for public clients): ") (flush) (str/trim (read-line))))
+        pkce (generate-pkce-pair)
+        state (generate-random-string 32)
+        auth-url (str "https://twitter.com/i/oauth2/authorize?"
+                      "response_type=code&"
+                      "client_id=" client-id "&"
+                      "redirect_uri=" (java.net.URLEncoder/encode callback-url "UTF-8") "&"
+                      "scope=" (java.net.URLEncoder/encode "tweet.read tweet.write users.read offline.access" "UTF-8") "&"
+                      "state=" state "&"
+                      "code_challenge=" (:challenge pkce) "&"
+                      "code_challenge_method=S256")
+        promise-atom (promise)]
+
+    (println "Opening browser for authorization...")
+    (println "If browser doesn't open, visit: " auth-url)
+
+    ;; Start callback server
+    (let [server (start-callback-server promise-atom)]
+      (try
+        ;; Open browser
+        (browse/browse-url auth-url)
+
+        ;; Wait for callback
+        (println "Waiting for authorization callback...")
+        (let [callback-result (deref promise-atom 300000 :timeout)] ; 5 minute timeout
+
+          (server) ; stop the server
+
+          (cond
+            (= callback-result :timeout)
+            (do (println "Authorization timed out")
+                nil)
+
+            (:error callback-result)
+            (do (println "Authorization error: " (:error callback-result))
+                nil)
+
+            (not= (:state callback-result) state)
+            (do (println "State mismatch - possible CSRF attack")
+                nil)
+
+            :else
+            (let [code (:code callback-result)
+                  ;; Exchange code for tokens
+                  token-params {:grant_type "authorization_code"
+                                :code code
+                                :redirect_uri callback-url
+                                :code_verifier (:verifier pkce)}
+                  token-params (if (not-empty client-secret)
+                                 token-params
+                                 (assoc token-params :client_id client-id))
+                  auth-header (if (not-empty client-secret)
+                                {"Authorization" (str "Basic "
+                                                      (.encodeToString (Base64/getEncoder)
+                                                                       (.getBytes (str client-id ":" client-secret) "UTF-8")))}
+                                {})
+                  response (http/post "https://api.twitter.com/2/oauth2/token"
+                                      {:headers (merge {"Content-Type" "application/x-www-form-urlencoded"}
+                                                       auth-header)
+                                       :body (str/join "&"
+                                                       (map (fn [[k v]]
+                                                              (str (name k) "="
+                                                                   (java.net.URLEncoder/encode (str v) "UTF-8")))
+                                                            token-params))})]
+              (if (= 200 (:status response))
+                (let [tokens (json/parse-string (:body response) true)]
+                  (println "✓ X OAuth 2.0 authentication successful!")
+                  {:client-id client-id
+                   :client-secret client-secret
+                   :access-token (:access_token tokens)
+                   :refresh-token (:refresh_token tokens)
+                   :expires-at (+ (System/currentTimeMillis) (* 1000 (:expires_in tokens)))})
+                (do
+                  (println "\n=== Token Exchange Failed ===")
+                  (println "Status Code:" (:status response))
+                  (println "Response Headers:" (:headers response))
+                  (println "Response Body:" (:body response))
+                  nil)))))
+        (catch Exception e
+          (server)
+          (println "\n=== Authentication Error ===")
+          (println "Error message:" (.getMessage e))
+          (println "Error type:" (type e))
+          (when (instance? clojure.lang.ExceptionInfo e)
+            (println "Error data:" (ex-data e)))
+          nil)))))
+
+;; LinkedIn OAuth 2.0 authentication
+(defn authenticate-linkedin-oauth2 [config]
+  (println "\n=== LinkedIn OAuth 2.0 Authentication ===")
+  (let [client-id (or (get-in config [:linkedin :client-id])
+                      (do (print "Enter LinkedIn Client ID: ") (flush) (str/trim (read-line))))
+        client-secret (or (get-in config [:linkedin :client-secret])
+                          (do (print "Enter LinkedIn Client Secret: ") (flush) (str/trim (read-line))))
+        state (generate-random-string 32)
+        auth-url (str "https://www.linkedin.com/oauth/v2/authorization?"
+                      "response_type=code&"
+                      "client_id=" client-id "&"
+                      "redirect_uri=" (java.net.URLEncoder/encode callback-url "UTF-8") "&"
+                      "state=" state "&"
+                      "scope=" (java.net.URLEncoder/encode "w_member_social" "UTF-8"))
+        promise-atom (promise)]
+
+    (println "Opening browser for authorization...")
+    (println "If browser doesn't open, visit: " auth-url)
+
+    ;; Start callback server
+    (let [server (start-callback-server promise-atom)]
+      (try
+        ;; Open browser
+        (browse/browse-url auth-url)
+
+        ;; Wait for callback
+        (println "Waiting for authorization callback...")
+        (let [callback-result (deref promise-atom 300000 :timeout)] ; 5 minute timeout
+
+          (server)
+
+          (cond
+            (= callback-result :timeout)
+            (do (println "Authorization timed out")
+                nil)
+
+            (:error callback-result)
+            (do (println "Authorization error: " (:error callback-result))
+                nil)
+
+            (not= (:state callback-result) state)
+            (do (println "State mismatch - possible CSRF attack")
+                nil)
+
+            :else
+            (let [code (:code callback-result)
+                  ;; Exchange code for tokens
+                  response (http/post "https://www.linkedin.com/oauth/v2/accessToken"
+                                      {:headers {"Content-Type" "application/x-www-form-urlencoded"}
+                                       :body (str/join "&"
+                                                       [(str "grant_type=authorization_code")
+                                                        (str "code=" (java.net.URLEncoder/encode code "UTF-8"))
+                                                        (str "redirect_uri=" (java.net.URLEncoder/encode callback-url "UTF-8"))
+                                                        (str "client_id=" (java.net.URLEncoder/encode client-id "UTF-8"))
+                                                        (str "client_secret=" (java.net.URLEncoder/encode client-secret "UTF-8"))])})]
+              (if (= 200 (:status response))
+                (let [tokens (json/parse-string (:body response) true)]
+                  (println "✓ LinkedIn OAuth 2.0 authentication successful!")
+                  {:client-id client-id
+                   :client-secret client-secret
+                   :access-token (:access_token tokens)
+                   :expires-at (+ (System/currentTimeMillis) (* 1000 (:expires_in tokens)))})
+                (do
+                  (println "Token exchange failed: " (:status response) " - " (:body response))
+                  nil)))))
+        (catch Exception e
+          (server)
+          (println "\n=== Authentication Error ===")
+          (println "Error message:" (.getMessage e))
+          (println "Error type:" (type e))
+          (when (instance? clojure.lang.ExceptionInfo e)
+            (println "Error data:" (ex-data e)))
+          nil)))))
+
+;; Refresh X OAuth 2.0 token
+(defn refresh-x-token [config]
+  (let [{:keys [client-id client-secret refresh-token]} (get config :x)]
+    (when refresh-token
+      (let [auth-header (if client-secret
+                          {"Authorization" (str "Basic "
+                                                (.encodeToString (Base64/getEncoder)
+                                                                 (.getBytes (str client-id ":" client-secret) "UTF-8")))}
+                          {})
+            response (http/post "https://api.twitter.com/2/oauth2/token"
+                                {:headers (merge {"Content-Type" "application/x-www-form-urlencoded"}
+                                                 auth-header)
+                                 :body (str "grant_type=refresh_token&refresh_token="
+                                            (java.net.URLEncoder/encode refresh-token "UTF-8")
+                                            (when-not client-secret
+                                              (str "&client_id=" client-id)))})]
+        (when (= 200 (:status response))
+          (let [tokens (json/parse-string (:body response) true)]
+            (merge (get config :x)
+                   {:access-token (:access_token tokens)
+                    :refresh-token (:refresh_token tokens)
+                    :expires-at (+ (System/currentTimeMillis) (* 1000 (:expires_in tokens)))})))))))
+
+;; Helper to get local name from potentially namespaced tag
 (defn local-name [tag]
   (if (keyword? tag)
     (let [tag-str (name tag)
@@ -67,17 +320,18 @@
 ;; Parse RSS/Atom feed
 (defn parse-feed [url]
   (let [response (http/get url)
-        feed-xml (xml/parse-str (:body response))]
+        feed-xml (xml/parse-str (:body response))
+        root-tag (local-name (:tag feed-xml))]
     (cond
       ;; RSS 2.0
-      (= :rss (local-name (:tag feed-xml)))
+      (= :rss root-tag)
       (let [channel (first (filter #(= :channel (local-name (:tag %))) (:content feed-xml)))
             items (filter #(= :item (local-name (:tag %))) (:content channel))]
         {:type :rss
          :items (map parse-rss-item items)})
 
       ;; Atom
-      (= :feed (local-name (:tag feed-xml)))
+      (= :feed root-tag)
       {:type :atom
        :items (map parse-atom-entry
                    (filter #(= :entry (local-name (:tag %))) (:content feed-xml)))}
@@ -111,7 +365,7 @@
                 (str (str/join " " current-thread) "\n\n" link)
                 (str (str/join " " current-thread) thread-marker)))
         (let [word (first remaining)
-              current-length (count (str/join " " current-thread))
+              current-length (reduce + (count (str/join " " current-thread)))
               max-for-thread (if is-first first-thread-max other-thread-max)]
           (if (> (+ current-length (count word) 1) max-for-thread)
             (recur remaining
@@ -149,55 +403,20 @@
        :link link})))
 
 ;; Platform-specific posting functions
-(defn percent-encode [s]
-  (-> s
-      str
-      (java.net.URLEncoder/encode "UTF-8")
-      (str/replace "+" "%20")
-      (str/replace "*" "%2A")
-      (str/replace "%7E" "~")))
-
-(defn generate-oauth-signature [method url oauth-params consumer-secret token-secret]
-  (let [sorted-params (sort-by first oauth-params)
-        param-string (str/join "&"
-                               (map (fn [[k v]]
-                                      (str (percent-encode k) "=" (percent-encode v)))
-                                    sorted-params))
-        base-string (str (str/upper-case method) "&"
-                         (percent-encode url) "&"
-                         (percent-encode param-string))
-        signing-key (str (percent-encode consumer-secret) "&" (percent-encode token-secret))
-        mac (javax.crypto.Mac/getInstance "HmacSHA1")
-        secret-key (javax.crypto.spec.SecretKeySpec. (.getBytes signing-key "UTF-8") "HmacSHA1")]
-    (.init mac secret-key)
-    (.encodeToString (java.util.Base64/getEncoder)
-                     (.doFinal mac (.getBytes base-string "UTF-8")))))
-
-;; Platform-specific posting functions
 (defn post-to-x [content config]
   (println "Posting to X...")
-  (let [{:keys [api-key api-secret access-token access-token-secret]} (get config :x)]
-    (if (and api-key api-secret access-token access-token-secret)
+  (let [x-config (get config :x)
+        ;; Check if token needs refresh
+        x-config (if (and (:expires-at x-config)
+                          (< (:expires-at x-config) (System/currentTimeMillis)))
+                   (do
+                     (println "Refreshing X access token...")
+                     (refresh-x-token config))
+                   x-config)]
+    (if (:access-token x-config)
       (try
-        (let [url "https://api.twitter.com/2/tweets"
-              timestamp (str (quot (System/currentTimeMillis) 1000))
-              nonce (str/replace (str (java.util.UUID/randomUUID)) "-" "")
-              oauth-params {"oauth_consumer_key" api-key
-                            "oauth_nonce" nonce
-                            "oauth_signature_method" "HMAC-SHA1"
-                            "oauth_timestamp" timestamp
-                            "oauth_token" access-token
-                            "oauth_version" "1.0"}
-              signature (generate-oauth-signature "POST" url oauth-params api-secret access-token-secret)
-              all-oauth-params (assoc oauth-params "oauth_signature" signature)
-              sorted-oauth (sort-by first all-oauth-params)
-              auth-header (str "OAuth "
-                               (str/join ", "
-                                         (map (fn [[k v]]
-                                                (str k "=\"" (percent-encode v) "\""))
-                                              sorted-oauth)))
-              response (http/post url
-                                  {:headers {"Authorization" auth-header
+        (let [response (http/post "https://api.twitter.com/2/tweets"
+                                  {:headers {"Authorization" (str "Bearer " (:access-token x-config))
                                              "Content-Type" "application/json"}
                                    :body (json/generate-string
                                           {:text (first (:threads content))})})]
@@ -206,7 +425,39 @@
             (println (str "Failed to post to X: " (:status response) " - " (:body response)))))
         (catch Exception e
           (println (str "Error posting to X: " (.getMessage e)))))
-      (println "X credentials not configured (need api-key, api-secret, access-token, access-token-secret)"))))
+      (println "X OAuth 2.0 access token not configured. Run 'auth x' to authenticate."))))
+
+(defn post-to-linkedin [content config]
+  (println "Posting to LinkedIn...")
+  (let [linkedin-config (get config :linkedin)]
+    (if (:access-token linkedin-config)
+      (try
+        ;; First, get the user's profile to get the person URN
+        (let [profile-response (http/get "https://api.linkedin.com/v2/userinfo"
+                                         {:headers {"Authorization" (str "Bearer " (:access-token linkedin-config))}})
+              profile (when (= 200 (:status profile-response))
+                        (json/parse-string (:body profile-response) true))
+              person-urn (str "urn:li:person:" (:sub profile))]
+
+          (if person-urn
+            (let [response (http/post "https://api.linkedin.com/v2/ugcPosts"
+                                      {:headers {"Authorization" (str "Bearer " (:access-token linkedin-config))
+                                                 "Content-Type" "application/json"
+                                                 "X-Restli-Protocol-Version" "2.0.0"}
+                                       :body (json/generate-string
+                                              {:author person-urn
+                                               :lifecycleState "PUBLISHED"
+                                               :specificContent {"com.linkedin.ugc.ShareContent"
+                                                                 {:shareCommentary {:text (:content content)}
+                                                                  :shareMediaCategory "NONE"}}
+                                               :visibility {"com.linkedin.ugc.MemberNetworkVisibility" "PUBLIC"}})})]
+              (if (= 201 (:status response))
+                (println "✓ Posted to LinkedIn successfully")
+                (println (str "Failed to post to LinkedIn: " (:status response) " - " (:body response)))))
+            (println "Failed to get LinkedIn user profile")))
+        (catch Exception e
+          (println (str "Error posting to LinkedIn: " (.getMessage e)))))
+      (println "LinkedIn OAuth 2.0 access token not configured. Run 'auth linkedin' to authenticate."))))
 
 (defn post-to-bluesky [content config]
   (let [{:keys [handle password]} (get config :bluesky)]
@@ -243,11 +494,6 @@
         (when (= 200 (:status response))
           (println "✓ Posted to Mastodon successfully")))
       (println "Mastodon credentials not configured"))))
-
-(defn post-to-linkedin [content config]
-  (println "LinkedIn posting requires OAuth 2.0 flow")
-  (println "Visit: https://www.linkedin.com/developers/apps to create an app")
-  (println "Content prepared but not posted (requires OAuth implementation)"))
 
 (defn post-to-facebook [content config]
   (let [page-access-token (get-in config [:facebook :page-access-token])
@@ -302,27 +548,33 @@
   (println "
 === Social Media Platform Setup Instructions ===
 
-1. X (Twitter):
+1. X (Twitter) - OAuth 2.0:
    - Go to https://developer.twitter.com/
    - Create a project and app
-   - Generate Bearer Token (requires $100/month API access)
-   - Add to config: {:x {:bearer-token \"your-token\"}}
+   - Enable OAuth 2.0 in app settings
+   - Set callback URL to: http://localhost:8080/callback
+   - Note Client ID and Client Secret (if confidential client)
+   - Run: bb rss-syndicate.clj auth x
+   - Requires $100/month API access
 
-2. Bluesky:
+2. LinkedIn - OAuth 2.0:
+   - Go to https://www.linkedin.com/developers/
+   - Create an app
+   - Add http://localhost:8080/callback to redirect URLs
+   - Add required products: \"Share on LinkedIn\"
+   - Note Client ID and Client Secret
+   - Run: bb rss-syndicate.clj auth linkedin
+
+3. Bluesky:
    - Use your regular Bluesky handle and password
    - Add to config: {:bluesky {:handle \"you.bsky.social\" :password \"app-password\"}}
-   - Recommended: Create an App Password in Settings > Privacy and Security > App Passwords
+   - Recommended: Create an App Password in Settings > Advanced > App Passwords
 
-3. Mastodon:
+4. Mastodon:
    - Go to your instance's Settings > Development
    - Create a new application
    - Copy the access token
    - Add to config: {:mastodon {:instance \"https://mastodon.social\" :access-token \"your-token\"}}
-
-4. LinkedIn:
-   - Go to https://www.linkedin.com/developers/
-   - Create an app
-   - Requires OAuth 2.0 flow (not implemented in this script)
 
 5. Facebook:
    - Go to https://developers.facebook.com/
@@ -344,10 +596,23 @@ Configuration file location: ~/.rss-syndicate-config.edn
     (= (first args) "setup")
     (show-setup-instructions)
 
+    (= (first args) "auth")
+    (let [platform (keyword (second args))
+          config (load-config)]
+      (case platform
+        :x (when-let [x-config (authenticate-x-oauth2 config)]
+             (save-config (assoc config :x x-config))
+             (println "X configuration saved!"))
+        :linkedin (when-let [linkedin-config (authenticate-linkedin-oauth2 config)]
+                    (save-config (assoc config :linkedin linkedin-config))
+                    (println "LinkedIn configuration saved!"))
+        (println "Usage: bb rss-syndicate.clj auth [x|linkedin]")))
+
     (empty? args)
     (do
       (println "Usage: bb rss-syndicate.clj <feed-url> [platforms...]")
       (println "       bb rss-syndicate.clj setup")
+      (println "       bb rss-syndicate.clj auth [x|linkedin]")
       (println "\nPlatforms: x, bluesky, mastodon, linkedin, facebook, instagram")
       (println "Example: bb rss-syndicate.clj https://example.com/feed.xml x bluesky mastodon"))
 
@@ -359,32 +624,33 @@ Configuration file location: ~/.rss-syndicate-config.edn
           config (load-config)]
 
       (println (str "Fetching feed: " feed-url))
-      (let [feed (parse-feed feed-url)
-            latest-item (first (:items feed))
-            title (:title latest-item)
-            link (:link latest-item)
-            description (:description latest-item)
-            media-url (:url (:enclosure latest-item))]
+      (try
+        (let [feed (parse-feed feed-url)
+              latest-item (first (:items feed))
+              title (:title latest-item)
+              link (:link latest-item)
+              description (:description latest-item)
+              media-url (:url (:enclosure latest-item))]
 
-        (println (str "\n📰 Latest post: " title))
-        (println (str "🔗 Link: " link))
-        (when media-url
-          (println (str "📷 Media: " media-url)))
+          (println (str "\n📰 Latest post: " title))
+          (println (str "🔗 Link: " link))
+          (when media-url
+            (println (str "📷 Media: " media-url)))
 
-        (doseq [platform platforms]
-          (let [formatted (format-content description link platform)]
-            (display-draft platform formatted)
-            (when (get-approval platform)
-              (case platform
-                :x (post-to-x formatted config)
-                :bluesky (post-to-bluesky formatted config)
-                :mastodon (post-to-mastodon formatted config)
-                :linkedin (post-to-linkedin formatted config)
-                :facebook (post-to-facebook formatted config)
-                :instagram (post-to-instagram formatted media-url config)))))))))
+          (doseq [platform platforms]
+            (let [formatted (format-content description link platform)]
+              (display-draft platform formatted)
+              (when (get-approval platform)
+                (case platform
+                  :x (post-to-x formatted config)
+                  :bluesky (post-to-bluesky formatted config)
+                  :mastodon (post-to-mastodon formatted config)
+                  :linkedin (post-to-linkedin formatted config)
+                  :facebook (post-to-facebook formatted config)
+                  :instagram (post-to-instagram formatted media-url config))))))
+        (catch Exception e
+          (println (str "Error: " (.getMessage e))))))))
 
+
+;; Always run main with *command-line-args* when script is executed
 (apply -main *command-line-args*)
-
-(comment
-  (xml/parse-str (:body (http/get "https://www.stevenoxley.com/mb/atom.xml")))
-  )
