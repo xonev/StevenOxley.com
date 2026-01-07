@@ -1,0 +1,4 @@
+{:deps {http-kit/http-kit {:mvn/version "2.7.0-alpha1"}
+        babashka/http-client {:mvn/version "0.4.15"}
+        cheshire/cheshire {:mvn/version "5.11.0"}
+        org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}}}

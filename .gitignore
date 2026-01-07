@@ -11,3 +11,6 @@ source.old
 source/_stash
 vendor
 node_modules
+.calva
+.clj-kondo
+.lsp
