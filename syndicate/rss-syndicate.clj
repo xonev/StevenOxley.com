@@ -352,17 +352,50 @@
       :else
       (throw (Exception. "Unknown feed format")))))
 
-;; Strip HTML tags
+;; Superscript digits for footnotes
+(def superscript-digits [\u2070 \u00B9 \u00B2 \u00B3 \u2074 \u2075 \u2076 \u2077 \u2078 \u2079])
+
+(defn number-to-superscript [n]
+  (apply str (map #(nth superscript-digits (Character/digit % 10)) (str n))))
+
+;; Extract links and convert to footnote format
+(defn process-html-with-footnotes [s]
+  (let [;; First decode HTML entities
+        decoded (-> s
+                    (str/replace #"&nbsp;" " ")
+                    (str/replace #"&amp;" "&")
+                    (str/replace #"&lt;" "<")
+                    (str/replace #"&gt;" ">")
+                    (str/replace #"&quot;" "\""))
+        ;; Find all anchor tags with href and text
+        link-pattern #"<a\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>"
+        links (atom [])
+        footnote-counter (atom 0)
+        ;; Replace links with text and footnote markers
+        processed (str/replace decoded link-pattern
+                               (fn [[_ href text]]
+                                 (let [clean-text (str/replace text #"<[^>]+>" "")] ;; Strip any inner tags
+                                   (if (= clean-text href)
+                                     ;; Link text is same as href, just use the text
+                                     clean-text
+                                     ;; Link text differs from href, add footnote
+                                     (do
+                                       (swap! footnote-counter inc)
+                                       (swap! links conj {:num @footnote-counter :href href})
+                                       (str clean-text (number-to-superscript @footnote-counter)))))))
+        ;; Strip remaining HTML tags
+        cleaned (str/replace processed #"</?[a-zA-Z][^>]*>" "")
+        ;; Build footnotes section
+        footnotes (when (seq @links)
+                    (str/join "\n" (map (fn [{:keys [num href]}]
+                                          (str (number-to-superscript num) href))
+                                        @links)))]
+    {:text cleaned
+     :footnotes footnotes}))
+
+;; Strip HTML tags (legacy function for compatibility)
 (defn strip-html [s]
-  (-> s
-      ;; First decode HTML entities
-      (str/replace #"&nbsp;" " ")
-      (str/replace #"&amp;" "&")
-      (str/replace #"&lt;" "<")
-      (str/replace #"&gt;" ">")
-      (str/replace #"&quot;" "\"")
-      ;; Then strip HTML tags (must start with letter or /)
-      (str/replace #"</?[a-zA-Z][^>]*>" "")))
+  (:text (process-html-with-footnotes s)))
 
 (defn split-into-threads [text link max-chars]
   (let [thread-marker " [→]"
@@ -448,24 +481,28 @@
 
 ;; Format content for different platforms
 (defn format-content [content link platform]
-  (let [clean-content (strip-html content)
+  (let [{:keys [text footnotes]} (process-html-with-footnotes content)
+        ;; Combine text with footnotes if present
+        full-content (if footnotes
+                       (str text "\n" footnotes)
+                       text)
         max-chars (get char-limits platform)]
     (case platform
       (:x :bluesky :mastodon)
       (let [link-suffix (str "\n\n" link)
             available-chars (- max-chars (count link-suffix))
-            threads (if (<= (count clean-content) available-chars)
-                      [(str clean-content link-suffix)]
-                      (split-into-threads clean-content link max-chars))]
+            threads (if (<= (count full-content) available-chars)
+                      [(str full-content link-suffix)]
+                      (split-into-threads full-content link max-chars))]
         {:threads threads})
 
       (:linkedin :facebook)
-      {:content (str clean-content "\n\n" link)}
+      {:content (str full-content "\n\n" link)}
 
       :instagram
-      {:content (if (> (count clean-content) (:instagram char-limits))
-                  (str (subs clean-content 0 (- (:instagram char-limits) 3)) "...")
-                  clean-content)
+      {:content (if (> (count full-content) (:instagram char-limits))
+                  (str (subs full-content 0 (- (:instagram char-limits) 3)) "...")
+                  full-content)
        :link link})))
 
 ;; Platform-specific posting functions
