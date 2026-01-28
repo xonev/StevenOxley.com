@@ -59,8 +59,8 @@ These four elements of decision-making - finding a single, strong reason; consid
 - What alternatives have you considered?
 - Is the decision reversible?
 - What followup is important to make this decision successful?
-- When and how will I know if this decision was a success?
-- What do I think will happen as a result of this decision?
+- When and how will you know if this decision was a success?
+- What do you think will happen as a result of this decision?
 
 These questions will prompt me to consider all the elements of decision-making that I've been learning. I plan to use them to help me make wiser decisions and regularly evaluate past decisions to make sure my decisions are producing the desired results. After designing the survey, I needed to plan how to use it. The process I designed is to keep a list of big decisions that I need to make, set aside time - likely once a week - to work through the survey for the decisions on the list, and once a quarter retrospect on decisions made and their results.
 

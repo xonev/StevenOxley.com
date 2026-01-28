@@ -4,6 +4,7 @@
 
 (ns rss-syndicate
   (:require [babashka.http-client :as http]
+            [babashka.process :as process]
             [org.httpkit.server :as server]
             [clojure.data.xml :as xml]
             [clojure.string :as str]
@@ -104,7 +105,7 @@
                       "response_type=code&"
                       "client_id=" client-id "&"
                       "redirect_uri=" (java.net.URLEncoder/encode callback-url "UTF-8") "&"
-                      "scope=" (java.net.URLEncoder/encode "tweet.read tweet.write users.read offline.access" "UTF-8") "&"
+                      "scope=" (java.net.URLEncoder/encode "tweet.read tweet.write users.read offline.access media.write" "UTF-8") "&"
                       "state=" state "&"
                       "code_challenge=" (:challenge pkce) "&"
                       "code_challenge_method=S256")
@@ -397,6 +398,179 @@
 (defn strip-html [s]
   (:text (process-html-with-footnotes s)))
 
+;; Image extraction and handling
+(def supported-image-types
+  #{"image/jpeg" "image/jpg" "image/png" "image/gif" "image/webp"})
+
+(defn extract-images-from-html
+  "Extracts image URLs from HTML content <img> tags.
+   Returns a vector of {:url ... :alt ...} maps."
+  [html-content]
+  (when html-content
+    (let [img-pattern #"<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>"
+          alt-pattern #"alt=[\"']([^\"']*)[\"']"
+          matches (re-seq img-pattern html-content)]
+      (->> matches
+           (map (fn [[full-match src]]
+                  (let [alt (second (re-find alt-pattern full-match))]
+                    {:url src :alt (or alt "")})))
+           ;; Filter out likely tracking pixels (1x1 images, spacer.gif, etc.)
+           (filter #(not (re-find #"(?i)(spacer|pixel|tracking|1x1|blank\.)" (:url %))))
+           vec))))
+
+(defn resolve-url
+  "Resolves a potentially relative URL against a base URL.
+   Returns the resolved absolute URL string."
+  [base-url relative-url]
+  (try
+    (str (.resolve (java.net.URI. base-url) relative-url))
+    (catch Exception _
+      relative-url)))
+
+(defn extract-all-images
+  "Extracts images from an RSS item, combining enclosures and HTML images.
+   base-url is used to resolve relative image URLs.
+   Returns a vector of {:url ... :alt ... :type ...} maps."
+  [rss-item base-url]
+  (let [;; Get enclosure image if present and is image type
+        enclosure-images (when-let [enc (:enclosure rss-item)]
+                           (when (and (:url enc)
+                                      (or (nil? (:type enc))
+                                          (str/starts-with? (or (:type enc) "") "image/")))
+                             [{:url (:url enc) :alt "" :type (:type enc)}]))
+        ;; Extract images from HTML description
+        html-images (extract-images-from-html (:description rss-item))
+        ;; Combine and deduplicate by URL
+        all-images (concat enclosure-images html-images)
+        seen-urls (atom #{})]
+    (->> all-images
+         (filter (fn [{:keys [url]}]
+                   (when-not (@seen-urls url)
+                     (swap! seen-urls conj url)
+                     true)))
+         ;; Resolve relative URLs against the base URL
+         (mapv (fn [img]
+                 (update img :url #(resolve-url base-url %)))))))
+
+(defn download-image
+  "Downloads an image from URL and returns local file info.
+   Returns {:path <temp-file-path> :type <mime-type> :size <bytes>} or nil on failure."
+  [image-url]
+  (try
+    (println (str "  Downloading: " image-url))
+    (let [response (http/get image-url
+                             {:headers {"User-Agent" "Mozilla/5.0 RSS-Syndicate/1.0"
+                                        "Accept" "image/*"}
+                              :as :bytes})
+          content-type (get-in response [:headers "content-type"])
+          ;; Handle content-type with charset suffix
+          mime-type (first (str/split (or content-type "image/jpeg") #";"))
+          body (:body response)
+          ;; Determine file extension
+          ext (case mime-type
+                "image/jpeg" ".jpg"
+                "image/jpg" ".jpg"
+                "image/png" ".png"
+                "image/gif" ".gif"
+                "image/webp" ".webp"
+                ".jpg")
+          temp-file (java.io.File/createTempFile "rss-syndicate-" ext)]
+      (with-open [out (io/output-stream temp-file)]
+        (.write out body))
+      {:path (.getAbsolutePath temp-file)
+       :type mime-type
+       :size (count body)
+       :url image-url})
+    (catch Exception e
+      (println (str "  Warning: Failed to download image: " image-url))
+      (println (str "  Reason: " (.getMessage e)))
+      nil)))
+
+(defn download-images
+  "Downloads multiple images, returning successfully downloaded ones.
+   Respects max-count limit."
+  [image-infos max-count]
+  (when (seq image-infos)
+    (->> image-infos
+         (take max-count)
+         (map #(download-image (:url %)))
+         (filter some?)
+         vec)))
+
+(defn cleanup-temp-images
+  "Removes temporary image files after posting."
+  [image-files]
+  (doseq [{:keys [path]} image-files]
+    (try
+      (io/delete-file path true)
+      (catch Exception _ nil))))
+
+;; Bluesky has a 1MB limit per image - this function resizes images that are too large
+(def bluesky-max-size (* 1000 1000)) ;; 1MB in bytes
+
+(defn- find-resize-tool
+  "Finds an available image resize tool. Returns :sips (macOS) or :convert (ImageMagick) or nil."
+  []
+  (cond
+    (= 0 (:exit (process/process ["which" "sips"] {:out :string :err :string})))
+    :sips
+    (= 0 (:exit (process/process ["which" "convert"] {:out :string :err :string})))
+    :convert
+    :else nil))
+
+(defn resize-image-for-bluesky
+  "Resizes an image to fit within Bluesky's 1MB limit using external tools (sips on macOS, ImageMagick convert).
+   Returns updated image info with new path and size, or original if already small enough."
+  [{:keys [path type size] :as image-info}]
+  (if (<= size bluesky-max-size)
+    image-info
+    (let [tool (find-resize-tool)]
+      (if-not tool
+        (do (println "  Warning: No image resize tool found (sips or ImageMagick convert). Skipping resize.")
+            image-info)
+        (try
+          (println (str "  Resizing image for Bluesky (was " (format "%.1f" (/ size 1024.0)) " KB)..."))
+          ;; Try progressively smaller dimensions until under 1MB
+          (let [temp-path (.getAbsolutePath (java.io.File/createTempFile "rss-syndicate-resized-" ".jpg"))]
+            (loop [scale-pct 85]
+              (let [resize-result
+                    (case tool
+                      :sips
+                      ;; sips copies first, then resizes in place
+                      (do (io/copy (io/file path) (io/file temp-path))
+                          (process/process
+                           ["sips" "--resampleHeightWidthMax"
+                            (str (int (* (/ scale-pct 100.0) 2048)))
+                            "-s" "formatOptions" "80"
+                            temp-path]
+                           {:out :string :err :string}))
+                      :convert
+                      (process/process
+                       ["convert" path
+                        "-resize" (str scale-pct "%")
+                        "-quality" "80"
+                        temp-path]
+                       {:out :string :err :string}))
+                    new-size (.length (io/file temp-path))]
+                (cond
+                  (<= new-size bluesky-max-size)
+                  (do (println (str "  ✓ Resized to " (format "%.1f" (/ new-size 1024.0)) " KB"))
+                      {:path temp-path
+                       :type "image/jpeg"
+                       :size new-size
+                       :url (:url image-info)})
+
+                  (> scale-pct 20)
+                  (recur (- scale-pct 15))
+
+                  :else
+                  (do (println "  Warning: Could not resize image under 1MB, using as-is")
+                      (io/delete-file temp-path true)
+                      image-info)))))
+          (catch Exception e
+            (println (str "  Warning: Failed to resize image: " (.getMessage e)))
+            image-info))))))
+
 (defn split-into-threads [text link max-chars]
   (let [thread-marker " [→]"
         link-suffix (str "\n\n" link)
@@ -505,8 +679,186 @@
                   full-content)
        :link link})))
 
+;; Platform media upload functions
+
+;; X (Twitter) media upload
+(defn upload-media-to-x
+  "Uploads an image to X using the v2 media upload API.
+   Returns media_id_string or nil on failure."
+  [{:keys [path type size]} x-config]
+  (try
+    (println (str "  Uploading image to X (" (format "%.1f" (/ size 1024.0)) " KB)..."))
+    (let [;; Use simple upload for images (works for < 5MB)
+          response (http/post "https://api.x.com/2/media/upload"
+                              {:headers {"Authorization" (str "Bearer " (:access-token x-config))}
+                               :multipart [{:name "media"
+                                            :content (io/file path)
+                                            :content-type type
+                                            :file-name (last (str/split path #"/"))}
+                                           {:name "media_category"
+                                            :content "tweet_image"}]
+                               :throw false})]
+      (if (#{200 201 202} (:status response))
+        (let [result (json/parse-string (:body response) true)
+              ;; v2 nests under :data with field :id
+              data (or (:data result) result)
+              media-id (or (:media_id_string data)
+                           (:id data)
+                           (when (:media_id data) (str (:media_id data))))]
+          (if media-id
+            (do (println (str "  ✓ Uploaded to X: " media-id))
+                media-id)
+            (do (println (str "  Warning: Could not extract media ID from response: " (:body response)))
+                nil)))
+        (do
+          (println (str "  Failed to upload to X: " (:status response) " - " (:body response)))
+          nil)))
+    (catch Exception e
+      (println (str "  Error uploading to X: " (.getMessage e)))
+      nil)))
+
+(defn upload-images-to-x
+  "Uploads up to 4 images to X, returns vector of media_ids."
+  [images x-config]
+  (when (and (seq images) (:access-token x-config))
+    (->> images
+         (take 4)
+         (map #(upload-media-to-x % x-config))
+         (filter #(and (some? %) (not= "" %) (not= "null" %)))
+         vec)))
+
+;; LinkedIn media upload
+(defn upload-image-to-linkedin
+  "Uploads an image to LinkedIn using the Images API.
+   Returns image URN or nil on failure."
+  [{:keys [path type size]} linkedin-config]
+  (try
+    (println (str "  Uploading image to LinkedIn (" (format "%.1f" (/ size 1024.0)) " KB)..."))
+    (let [member-id (:member-id linkedin-config)
+          linkedin-version "202511"
+          ;; Step 1: Initialize upload
+          init-response (http/post "https://api.linkedin.com/rest/images?action=initializeUpload"
+                                   {:headers {"Authorization" (str "Bearer " (:access-token linkedin-config))
+                                              "Content-Type" "application/json"
+                                              "LinkedIn-Version" linkedin-version
+                                              "X-Restli-Protocol-Version" "2.0.0"}
+                                    :body (json/generate-string
+                                           {:initializeUploadRequest
+                                            {:owner (str "urn:li:person:" member-id)}})
+                                    :throw false})]
+      (if (= 200 (:status init-response))
+        (let [init-result (json/parse-string (:body init-response) true)
+              upload-url (get-in init-result [:value :uploadUrl])
+              image-urn (get-in init-result [:value :image])
+              ;; Step 2: Upload the image bytes
+              file-bytes (with-open [in (io/input-stream path)]
+                           (.readAllBytes in))
+              upload-response (http/put upload-url
+                                        {:headers {"Authorization" (str "Bearer " (:access-token linkedin-config))
+                                                   "Content-Type" type}
+                                         :body file-bytes
+                                         :throw false})]
+          (if (#{200 201 204} (:status upload-response))
+            (do
+              (println (str "  ✓ Uploaded to LinkedIn: " image-urn))
+              image-urn)
+            (do
+              (println (str "  Failed to upload image to LinkedIn: " (:status upload-response)))
+              nil)))
+        (do
+          (println (str "  Failed to initialize LinkedIn upload: " (:status init-response) " - " (:body init-response)))
+          nil)))
+    (catch Exception e
+      (println (str "  Error uploading to LinkedIn: " (.getMessage e)))
+      nil)))
+
+(defn upload-images-to-linkedin
+  "Uploads images to LinkedIn, returns vector of image URNs."
+  [images linkedin-config]
+  (when (and (seq images) (:access-token linkedin-config))
+    (->> images
+         (take 20) ;; LinkedIn MultiImage supports up to 20
+         (map #(upload-image-to-linkedin % linkedin-config))
+         (filter some?)
+         vec)))
+
+;; Bluesky media upload
+(defn upload-blob-to-bluesky
+  "Uploads an image blob to Bluesky.
+   Returns blob metadata for embedding or nil on failure."
+  [{:keys [path type size] :as image-info} session]
+  (try
+    ;; First resize if needed for Bluesky's 1MB limit
+    (let [{:keys [path type size]} (resize-image-for-bluesky image-info)]
+      (println (str "  Uploading blob to Bluesky (" (format "%.1f" (/ size 1024.0)) " KB)..."))
+      (let [file-bytes (with-open [in (io/input-stream path)]
+                         (.readAllBytes in))
+            response (http/post "https://bsky.social/xrpc/com.atproto.repo.uploadBlob"
+                                {:headers {"Authorization" (str "Bearer " (:accessJwt session))
+                                           "Content-Type" type}
+                                 :body file-bytes
+                                 :throw false})]
+        (if (= 200 (:status response))
+          (let [result (json/parse-string (:body response) true)
+                blob (:blob result)]
+            (println "  ✓ Uploaded blob to Bluesky")
+            blob)
+          (do
+            (println (str "  Failed to upload blob to Bluesky: " (:status response) " - " (:body response)))
+            nil))))
+    (catch Exception e
+      (println (str "  Error uploading to Bluesky: " (.getMessage e)))
+      nil)))
+
+(defn prepare-bluesky-image-embed
+  "Prepares embed structure for Bluesky post with images."
+  [blobs]
+  (when (seq blobs)
+    {:$type "app.bsky.embed.images"
+     :images (mapv (fn [blob]
+                     {:alt ""
+                      :image blob})
+                   blobs)}))
+
+;; Mastodon media upload
+(defn upload-media-to-mastodon
+  "Uploads an image to Mastodon.
+   Returns media attachment ID or nil on failure."
+  [{:keys [path type size]} mastodon-config]
+  (try
+    (println (str "  Uploading media to Mastodon (" (format "%.1f" (/ size 1024.0)) " KB)..."))
+    (let [{:keys [instance access-token]} mastodon-config
+          response (http/post (str instance "/api/v2/media")
+                              {:headers {"Authorization" (str "Bearer " access-token)}
+                               :multipart [{:name "file"
+                                            :content (io/file path)
+                                            :content-type type
+                                            :file-name (last (str/split path #"/"))}]
+                               :throw false})]
+      (if (#{200 202} (:status response))
+        (let [result (json/parse-string (:body response) true)
+              media-id (:id result)]
+          (println (str "  ✓ Uploaded to Mastodon: " media-id))
+          media-id)
+        (do
+          (println (str "  Failed to upload to Mastodon: " (:status response) " - " (:body response)))
+          nil)))
+    (catch Exception e
+      (println (str "  Error uploading to Mastodon: " (.getMessage e)))
+      nil)))
+
+(defn upload-images-to-mastodon
+  "Uploads up to 4 images to Mastodon, returns vector of media_ids."
+  [images mastodon-config]
+  (when (and (seq images) (:access-token mastodon-config))
+    (->> images
+         (take 4)
+         (map #(upload-media-to-mastodon % mastodon-config))
+         (filter some?)
+         vec)))
+
 ;; Platform-specific posting functions
-(defn post-to-x [content config]
+(defn post-to-x [content config images]
   (println "Posting to X...")
   (let [x-config (get config :x)
         ;; Check if token needs refresh
@@ -518,19 +870,25 @@
                    x-config)]
     (if (:access-token x-config)
       (try
-        (let [threads (:threads content)]
+        ;; Upload images first (only for first tweet)
+        (let [media-ids (when (seq images)
+                          (upload-images-to-x images x-config))
+              threads (:threads content)]
           (loop [remaining threads
                  previous-tweet-id nil
                  index 1]
             (when-let [tweet-text (first remaining)]
-              (let [tweet-data (if previous-tweet-id
-                                {:text tweet-text
-                                 :reply {:in_reply_to_tweet_id previous-tweet-id}}
-                                {:text tweet-text})
+              (let [;; Only attach media to first tweet
+                    tweet-data (cond-> {:text tweet-text}
+                                 previous-tweet-id
+                                 (assoc :reply {:in_reply_to_tweet_id previous-tweet-id})
+                                 (and (= index 1) (seq media-ids))
+                                 (assoc :media {:media_ids media-ids}))
                     response (http/post "https://api.twitter.com/2/tweets"
                                         {:headers {"Authorization" (str "Bearer " (:access-token x-config))
                                                    "Content-Type" "application/json"}
-                                         :body (json/generate-string tweet-data)})]
+                                         :body (json/generate-string tweet-data)
+                                         :throw false})]
                 (if (= 201 (:status response))
                   (let [tweet-id (get-in (json/parse-string (:body response) true) [:data :id])]
                     (println (str "✓ Posted tweet " index " of " (count threads)))
@@ -540,7 +898,7 @@
           (println (str "Error posting to X: " (.getMessage e)))))
       (println "X OAuth 2.0 access token not configured. Run 'auth x' to authenticate."))))
 
-(defn post-to-linkedin [content config]
+(defn post-to-linkedin [content config images]
   (println "Posting to LinkedIn...")
   (let [linkedin-config (get config :linkedin)]
     (if (:access-token linkedin-config)
@@ -553,21 +911,34 @@
               ;; Use a known active LinkedIn API version (202511 = November 2025)
               ;; LinkedIn releases new versions monthly and supports them for 1 year
               linkedin-version "202511"
+              ;; Upload images first
+              image-urns (when (seq images)
+                           (upload-images-to-linkedin images linkedin-config))
+              ;; Build post body based on number of images
+              post-body (cond-> {:author person-urn
+                                 :commentary (:content content)
+                                 :visibility "PUBLIC"
+                                 :distribution {:feedDistribution "MAIN_FEED"
+                                               :targetEntities []
+                                               :thirdPartyDistributionChannels []}
+                                 :lifecycleState "PUBLISHED"
+                                 :isReshareDisabledByAuthor false}
+                          ;; Single image: use media content
+                          (= 1 (count image-urns))
+                          (assoc :content {:media {:id (first image-urns)
+                                                   :altText ""}})
+                          ;; Multiple images (2-20): use multiImage
+                          (> (count image-urns) 1)
+                          (assoc :content {:multiImage
+                                           {:images (mapv (fn [urn] {:id urn :altText ""})
+                                                          image-urns)}}))
               response (when person-urn
                          (http/post "https://api.linkedin.com/rest/posts"
                                       {:headers {"Authorization" (str "Bearer " (:access-token linkedin-config))
                                                  "Content-Type" "application/json"
                                                  "X-Restli-Protocol-Version" "2.0.0"
                                                  "LinkedIn-Version" linkedin-version}
-                                       :body (json/generate-string
-                                              {:author person-urn
-                                               :commentary (:content content)
-                                               :visibility "PUBLIC"
-                                               :distribution {:feedDistribution "MAIN_FEED"
-                                                            :targetEntities []
-                                                            :thirdPartyDistributionChannels []}
-                                               :lifecycleState "PUBLISHED"
-                                               :isReshareDisabledByAuthor false})}))]
+                                       :body (json/generate-string post-body)}))]
           (when response
             (if (= 201 (:status response))
               (println "✓ Posted to LinkedIn successfully")
@@ -584,7 +955,7 @@
             (println "Error data:" (ex-data e)))))
       (println "LinkedIn OAuth 2.0 access token not configured. Run 'auth linkedin' to authenticate."))))
 
-(defn post-to-bluesky [content config]
+(defn post-to-bluesky [content config images]
   (let [{:keys [handle password]} (get config :bluesky)]
     (if (and handle password)
       ;; First, create session
@@ -595,20 +966,34 @@
                                              :password password})})
             session (json/parse-string (:body session-resp) true)]
         (when (:accessJwt session)
-          (let [threads (:threads content)]
+          ;; Upload images as blobs (up to 4, with resize if needed)
+          (let [blobs (when (seq images)
+                        (->> images
+                             (take 4)
+                             (map #(upload-blob-to-bluesky % session))
+                             (filter some?)
+                             vec))
+                embed (prepare-bluesky-image-embed blobs)
+                threads (:threads content)]
             (loop [remaining threads
                    previous-post nil
                    index 1]
               (when-let [post-text (first remaining)]
-                (let [record (if previous-post
-                              {:text post-text
-                               :createdAt (str (java.time.Instant/now))
-                               :reply {:root {:uri (:root-uri previous-post)
-                                             :cid (:root-cid previous-post)}
-                                      :parent {:uri (:uri previous-post)
-                                              :cid (:cid previous-post)}}}
-                              {:text post-text
-                               :createdAt (str (java.time.Instant/now))})
+                (let [;; Build base record
+                      base-record {:text post-text
+                                   :createdAt (str (java.time.Instant/now))}
+                      ;; Add reply info if this is a reply
+                      record-with-reply (if previous-post
+                                          (assoc base-record :reply
+                                                 {:root {:uri (:root-uri previous-post)
+                                                        :cid (:root-cid previous-post)}
+                                                  :parent {:uri (:uri previous-post)
+                                                          :cid (:cid previous-post)}})
+                                          base-record)
+                      ;; Add embed only to first post
+                      record (if (and (= index 1) embed)
+                               (assoc record-with-reply :embed embed)
+                               record-with-reply)
                       response (http/post "https://bsky.social/xrpc/com.atproto.repo.createRecord"
                                           {:headers {"Authorization" (str "Bearer " (:accessJwt session))
                                                      "Content-Type" "application/json"}
@@ -627,18 +1012,24 @@
                     (println (str "Failed to post to Bluesky: " (:status response) " - " (:body response))))))))))
       (println "Bluesky credentials not configured"))))
 
-(defn post-to-mastodon [content config]
+(defn post-to-mastodon [content config images]
   (let [{:keys [instance access-token]} (get config :mastodon)]
     (if (and instance access-token)
-      (let [threads (:threads content)]
+      ;; Upload images first (up to 4)
+      (let [mastodon-config {:instance instance :access-token access-token}
+            media-ids (when (seq images)
+                        (upload-images-to-mastodon images mastodon-config))
+            threads (:threads content)]
         (loop [remaining threads
                previous-status-id nil
                index 1]
           (when-let [status-text (first remaining)]
-            (let [status-data (if previous-status-id
-                               {:status status-text
-                                :in_reply_to_id previous-status-id}
-                               {:status status-text})
+            (let [;; Only attach media to first status
+                  status-data (cond-> {:status status-text}
+                                previous-status-id
+                                (assoc :in_reply_to_id previous-status-id)
+                                (and (= index 1) (seq media-ids))
+                                (assoc :media_ids media-ids))
                   response (http/post (str instance "/api/v1/statuses")
                                       {:headers {"Authorization" (str "Bearer " access-token)
                                                  "Content-Type" "application/json"}
@@ -673,7 +1064,7 @@
     (println "ERROR: Instagram requires an image or video")))
 
 ;; Display draft and get approval
-(defn display-draft [platform content]
+(defn display-draft [platform content images]
   (println (str "\n=== " (name platform) " Draft ==="))
   (case platform
     (:x :bluesky :mastodon)
@@ -692,7 +1083,15 @@
     (do
       (println (str "Caption (" (count (:content content)) " chars):"))
       (println (:content content))
-      (println (str "Link: " (:link content))))))
+      (println (str "Link: " (:link content)))))
+
+  ;; Display image information
+  (when (seq images)
+    (println (str "\n📷 Images (" (count images) "):"))
+    (doseq [[idx img] (map-indexed vector images)]
+      (println (str "  " (inc idx) ". " (last (str/split (:path img) #"/"))
+                    " (" (format "%.1f" (/ (:size img) 1024.0)) " KB, "
+                    (:type img) ")")))))
 
 (defn get-approval [platform]
   (print (str "\nPost to " (name platform) "? (y/n): "))
@@ -777,7 +1176,9 @@ Configuration file location: ~/.rss-syndicate-config.edn
           platforms (if (> (count args) 1)
                       (map keyword (rest args))
                       [:x :bluesky :mastodon :linkedin :facebook :instagram])
-          config (load-config)]
+          config (load-config)
+          ;; Platform image limits
+          platform-max-images {:x 4 :bluesky 4 :mastodon 4 :linkedin 20 :facebook 0 :instagram 1}]
 
       (println (str "Fetching feed: " feed-url))
       (try
@@ -786,24 +1187,40 @@ Configuration file location: ~/.rss-syndicate-config.edn
               title (:title latest-item)
               link (:link latest-item)
               description (:description latest-item)
-              media-url (:url (:enclosure latest-item))]
+              media-url (:url (:enclosure latest-item))
+              ;; Extract all images from RSS item (resolve relative URLs against feed URL)
+              all-images (extract-all-images latest-item feed-url)
+              ;; Download images once (max 20 to cover LinkedIn's MultiImage)
+              downloaded-images (when (seq all-images)
+                                  (println "\nDownloading images...")
+                                  (download-images all-images 20))]
 
           (println (str "\n📰 Latest post: " title))
           (println (str "🔗 Link: " link))
-          (when media-url
-            (println (str "📷 Media: " media-url)))
+          (when (seq downloaded-images)
+            (println (str "📷 Downloaded " (count downloaded-images) " image(s)")))
 
-          (doseq [platform platforms]
-            (let [formatted (format-content description link platform)]
-              (display-draft platform formatted)
-              (when (get-approval platform)
-                (case platform
-                  :x (post-to-x formatted config)
-                  :bluesky (post-to-bluesky formatted config)
-                  :mastodon (post-to-mastodon formatted config)
-                  :linkedin (post-to-linkedin formatted config)
-                  :facebook (post-to-facebook formatted config)
-                  :instagram (post-to-instagram formatted media-url config))))))
+          (try
+            (doseq [platform platforms]
+              (let [;; Get max images for this platform
+                    max-images (get platform-max-images platform 0)
+                    ;; Take appropriate number of images for this platform
+                    platform-images (vec (take max-images downloaded-images))
+                    formatted (format-content description link platform)]
+                (display-draft platform formatted platform-images)
+                (when (get-approval platform)
+                  (case platform
+                    :x (post-to-x formatted config platform-images)
+                    :bluesky (post-to-bluesky formatted config platform-images)
+                    :mastodon (post-to-mastodon formatted config platform-images)
+                    :linkedin (post-to-linkedin formatted config platform-images)
+                    :facebook (post-to-facebook formatted config)
+                    :instagram (post-to-instagram formatted media-url config)))))
+            (finally
+              ;; Cleanup temp image files
+              (when (seq downloaded-images)
+                (println "\nCleaning up temporary files...")
+                (cleanup-temp-images downloaded-images)))))
         (catch Exception e
           (println (str "Error: " (.getMessage e))))))))
 
