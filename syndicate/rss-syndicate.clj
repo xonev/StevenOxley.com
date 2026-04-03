@@ -715,6 +715,9 @@
           nil)))
     (catch Exception e
       (println (str "  Error uploading to X: " (.getMessage e)))
+      (when-let [data (ex-data e)]
+        (println (str "  Response status: " (:status data)))
+        (println (str "  Response body: " (:body data))))
       nil)))
 
 (defn upload-images-to-x
@@ -763,13 +766,16 @@
               (println (str "  ✓ Uploaded to LinkedIn: " image-urn))
               image-urn)
             (do
-              (println (str "  Failed to upload image to LinkedIn: " (:status upload-response)))
+              (println (str "  Failed to upload image to LinkedIn: " (:status upload-response) " - " (:body upload-response)))
               nil)))
         (do
           (println (str "  Failed to initialize LinkedIn upload: " (:status init-response) " - " (:body init-response)))
           nil)))
     (catch Exception e
       (println (str "  Error uploading to LinkedIn: " (.getMessage e)))
+      (when-let [data (ex-data e)]
+        (println (str "  Response status: " (:status data)))
+        (println (str "  Response body: " (:body data))))
       nil)))
 
 (defn upload-images-to-linkedin
@@ -808,6 +814,9 @@
             nil))))
     (catch Exception e
       (println (str "  Error uploading to Bluesky: " (.getMessage e)))
+      (when-let [data (ex-data e)]
+        (println (str "  Response status: " (:status data)))
+        (println (str "  Response body: " (:body data))))
       nil)))
 
 (defn prepare-bluesky-image-embed
@@ -845,6 +854,9 @@
           nil)))
     (catch Exception e
       (println (str "  Error uploading to Mastodon: " (.getMessage e)))
+      (when-let [data (ex-data e)]
+        (println (str "  Response status: " (:status data)))
+        (println (str "  Response body: " (:body data))))
       nil)))
 
 (defn upload-images-to-mastodon
@@ -895,7 +907,10 @@
                     (recur (rest remaining) tweet-id (inc index)))
                   (println (str "Failed to post tweet " index ": " (:status response) " - " (:body response))))))))
         (catch Exception e
-          (println (str "Error posting to X: " (.getMessage e)))))
+          (println (str "Error posting to X: " (.getMessage e)))
+          (when-let [data (ex-data e)]
+            (println (str "  Response status: " (:status data)))
+            (println (str "  Response body: " (:body data))))))
       (println "X OAuth 2.0 access token not configured. Run 'auth x' to authenticate."))))
 
 (defn post-to-linkedin [content config images]
@@ -951,8 +966,9 @@
           (println "\n=== LinkedIn Error ===")
           (println "Error message:" (.getMessage e))
           (println "Error type:" (type e))
-          (when (instance? clojure.lang.ExceptionInfo e)
-            (println "Error data:" (ex-data e)))))
+          (when-let [data (ex-data e)]
+            (println "Response status:" (:status data))
+            (println "Response body:" (:body data)))))
       (println "LinkedIn OAuth 2.0 access token not configured. Run 'auth linkedin' to authenticate."))))
 
 (defn post-to-bluesky [content config images]
@@ -1051,8 +1067,9 @@
                                  :headers {"Content-Type" "application/json"}
                                  :body (json/generate-string
                                         {:message (:content content)})})]
-        (when (= 200 (:status response))
-          (println "✓ Posted to Facebook successfully")))
+        (if (= 200 (:status response))
+          (println "✓ Posted to Facebook successfully")
+          (println (str "Failed to post to Facebook: " (:status response) " - " (:body response)))))
       (println "Facebook credentials not configured"))))
 
 (defn post-to-instagram [content config media-url]
@@ -1222,7 +1239,10 @@ Configuration file location: ~/.rss-syndicate-config.edn
                 (println "\nCleaning up temporary files...")
                 (cleanup-temp-images downloaded-images)))))
         (catch Exception e
-          (println (str "Error: " (.getMessage e))))))))
+          (println (str "Error: " (.getMessage e)))
+          (when-let [data (ex-data e)]
+            (println (str "  Response status: " (:status data)))
+            (println (str "  Response body: " (:body data)))))))))
 
 
 ;; Always run main with *command-line-args* when script is executed

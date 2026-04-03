@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:docs.bsky.app)",
+      "WebFetch(domain:docs.joinmastodon.org)",
+      "WebFetch(domain:developer.x.com)",
+      "WebFetch(domain:devcommunity.x.com)",
+      "WebFetch(domain:docs.x.com)"
+    ]
+  }
+}
