@@ -327,7 +327,7 @@
                    (:content entry))]
     {:title (get-text :title)
      :link link
-     :description (or (get-text :summary) (get-text :content))
+     :description (or (get-text :content) (get-text :summary))
      :pub-date (get-text :published)
      :enclosure nil}))
 
@@ -389,7 +389,7 @@
         ;; Build footnotes section
         footnotes (when (seq @links)
                     (str/join "\n" (map (fn [{:keys [num href]}]
-                                          (str (number-to-superscript num) href))
+                                          (str (number-to-superscript num) " " href))
                                         @links)))]
     {:text cleaned
      :footnotes footnotes}))
@@ -658,7 +658,7 @@
   (let [{:keys [text footnotes]} (process-html-with-footnotes content)
         ;; Combine text with footnotes if present
         full-content (if footnotes
-                       (str text "\n" footnotes)
+                       (str text "\n\n" footnotes)
                        text)
         max-chars (get char-limits platform)]
     (case platform
